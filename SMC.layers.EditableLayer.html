@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: EditableLayer</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Class: EditableLayer</h1>
+
+    
+
+
+
+<section>
+
+<header>
+    <h2>
+        <span class="ancestors"><a href="SMC.html">SMC</a><a href="SMC.layers.html">.layers</a>.</span>
+    
+    EditableLayer
+    </h2>
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+
+    
+        
+<dt>
+    <h4 class="name" id="EditableLayer"><span class="type-signature">(abstract) </span>new EditableLayer<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Base class for all SMC viewer layer which are both reloadable and editable layers.
+    </div>
+    
+
+    
+
+    
+
+    
+
+    
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-author">Author:</dt>
+    <dd class="tag-author">
+        <ul>
+            <li>Moisés Arcos (marcos@emergya.com)</li>
+        </ul>
+    </dd>
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="EditableLayer.js.html">layers/EditableLayer.js</a>, <a href="EditableLayer.js.html#line10">line 10</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+    
+    </div>
+
+    
+        <h3 class="subsection-title">Extends</h3>
+
+        <ul>
+            <li><a href="SMC.layers.SingleLayer.html">SMC.layers.SingleLayer</a></li>
+        </ul>
+    
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        <dl>
+            
+<dt>
+    <h4 class="name" id="initialize"><span class="type-signature"></span>initialize<span class="signature">(options)</span><span class="type-signature"></span></h4>
+
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Initialize the object with the params
+    </div>
+    
+
+    
+
+    
+
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">object with need parameters</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+    
+
+    
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="EditableLayer.js.html">layers/EditableLayer.js</a>, <a href="EditableLayer.js.html#line17">line 17</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="onAdd"><span class="type-signature"></span>onAdd<span class="signature">(map)</span><span class="type-signature"></span></h4>
+
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Method to load the control in the map
+    </div>
+    
+
+    
+
+    
+
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>map</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="SMC.Map.html">SMC.Map</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Map to be added</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+    
+
+    
+<dl class="details">
+    
+
+    
+
+    
+
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="SMC.layers.SingleLayer.html#onAdd">SMC.layers.SingleLayer#onAdd</a>
+    </li></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="SingleLayer.js.html">layers/SingleLayer.js</a>, <a href="SingleLayer.js.html#line32">line 32</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        </dl>
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeControl.html">LayerTreeControl</a></li><li><a href="SMC.controls.layerTree.LayerTreeLeaf.html">LayerTreeLeaf</a></li><li><a href="SMC.controls.layerTree.LayerTreeNode.html">LayerTreeNode</a></li><li><a href="SMC.layers.aggregation.AggregatingLayer.html">AggregatingLayer</a></li><li><a href="SMC.layers.aggregation.MultiModeLayer.html">MultiModeLayer</a></li><li><a href="SMC.layers.EditableLayer.html">EditableLayer</a></li><li><a href="SMC.layers.Folder.html">Folder</a></li><li><a href="SMC.layers.geometry.CanvasRenderer.html">CanvasRenderer</a></li><li><a href="SMC.layers.geometry.GeometryLayer.html">GeometryLayer</a></li><li><a href="SMC.layers.geometry.TiledGeometryLayer.html">TiledGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSGeometryLayer.html">WFSGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html">WFSTiledGeometryLayer</a></li><li><a href="SMC.layers.history.AggregatingHistoryLayer.html">AggregatingHistoryLayer</a></li><li><a href="SMC.layers.history.DataHistoryLayer.html">DataHistoryLayer</a></li><li><a href="SMC.layers.Layer.html">Layer</a></li><li><a href="SMC.layers.markers.AtmosphereRTMarkerLayer.html">AtmosphereRTMarkerLayer</a></li><li><a href="SMC.layers.markers.MarkerLayer.html">MarkerLayer</a></li><li><a href="SMC.layers.markers.WFSMarkerLayer.html">WFSMarkerLayer</a></li><li><a href="SMC.layers.markers.WFSTMarkerLayer.html">WFSTMarkerLayer</a></li><li><a href="SMC.layers.reloaders.LayerReloader.html">LayerReloader</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html">ReloadTrigger</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html">TimerReloadTrigger</a></li><li><a href="SMC.layers.stylers.Styler.html">Styler</a></li><li><a href="SMC.layers.TileLayer.html">TileLayer</a></li><li><a href="SMC.layers.WMSLayer.html">WMSLayer</a></li><li><a href="SMC.Map.html">Map</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html">AtmosphereRTFeatureProvider</a></li><li><a href="SMC.providers.FeatureHistory.html">FeatureHistory</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html">FeatureHistoryProvider</a></li><li><a href="SMC.providers.FeaturesProvider.html">FeaturesProvider</a></li><li><a href="SMC.providers.RTFeatureProvider.html">RTFeatureProvider</a></li><li><a href="SMC.providers.URLFeatureProvider.html">URLFeatureProvider</a></li><li><a href="SMC.providers.WFSProvider.html">WFSProvider</a></li><li><a href="SMC.providers.WFSTProvider.html">WFSTProvider</a></li></ul><h3>Events</h3><ul><li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html#event:featureHistoryLoaded">featureHistoryLoaded</a></li><li><a href="SMC.providers.FeaturesProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.RTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.URLFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSTProvider.html#event:featuresLoaded">featuresLoaded</a></li></ul><h3>Namespaces</h3><ul><li><a href="SMC.html">SMC</a></li><li><a href="SMC.controls.html">controls</a></li><li><a href="SMC.controls.layerTree.html">layerTree</a></li><li><a href="SMC.layers.html">layers</a></li><li><a href="SMC.layers.aggregation.html">aggregation</a></li><li><a href="SMC.layers.geometry.html">geometry</a></li><li><a href="SMC.layers.history.html">history</a></li><li><a href="SMC.layers.markers.html">markers</a></li><li><a href="SMC.layers.reloaders.html">reloaders</a></li><li><a href="SMC.layers.stylers.html">stylers</a></li><li><a href="SMC.providers.html">providers</a></li></ul><h3>Mixins</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeFolder.html">LayerTreeFolder</a></li><li><a href="SMC.LayerLoader.html">LayerLoader</a></li><li><a href="SMC.layers.SingleLayer.html">SingleLayer</a></li><li><a href="SMC.layers.stylers.MapCssStyler.html">MapCssStyler</a></li><li><a href="SMC.layers.stylers.MarkerCssStyler.html">MarkerCssStyler</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Mustache">Mustache</a></li><li><a href="global.html#paper">paper</a></li><li><a href="global.html#PEG">PEG</a></li><li><a href="global.html#rbush">rbush</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha8</a> on Wed Jul 30 2014 10:34:07 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

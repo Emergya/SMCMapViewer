@@ -79,11 +79,19 @@ SMC.layers.geometry.GeometryLayer = L.CanvasLayer.extend(
 
 		},
 
+		/**
+		 * Method to load the control in the map
+		 * @param {SMC.Map} map - Map to be removed
+		 */
 		onRemove: function() {
 			SMC.layers.geometry.CanvasRenderer.prototype.onRemove.call(this);
 			L.CanvasLayer.prototype.onRemove.apply(this, arguments);
 		},
 
+		/**
+		 * Method to get the map
+		 * @returns {SMC.Map} map - Map layer
+		 */
 		getMap: function() {
 			return this._map;
 		},

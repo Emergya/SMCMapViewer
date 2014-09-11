@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: providers/WFSTProvider.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: providers/WFSTProvider.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>require("./WFSProvider");
+/**
+ * Base class to create a WFS-T provider
+ * @class
+ * @extends SMC.providers.WFSProvider
+ * @mixes L.Mixin.Events
+ * @param {SMC.providers.WFSTProvider~options} options - The configuration for the class
+ *
+ * @author Moisés Arcos (marcos@emergya.com)
+ */
+SMC.providers.WFSTProvider = SMC.providers.WFSProvider.extend(
+	/** @lends SMC.providers.WFSTProvider# */
+	{
+        includes: SMC.Util.deepClassInclude([SMC.providers.WFSProvider]),
+		/**
+         * Initialize the class with options parameter
+         * @param {object} options - default options
+         */
+        initialize: function(options) {
+            SMC.providers.WFSProvider.prototype.initialize.call(this, options);
+        },
+        /**
+         * Method to prepare WFS-T request payload to insert a geometry
+         * @private
+         * @param {object} geometry - element to be added
+         */
+        _insert: function(geometry){
+            var self = this;
+            var geom_type = this._getGeomType(geometry);
+
+            $.ajax({
+                type: "GET",
+                url: this.options.serverURL + "?request=DescribeFeatureType&amp;version=1.1.0&amp;typename=" + this.options.typeName,
+                dataType: "xml",
+                contentType: "text/xml",
+                success: function(xml, status, object) {
+                    var schema = xml.getElementsByTagName("schema")[0];
+                    var targetNamespace = schema.getAttribute("targetNamespace");
+                    var namespace = self.options.typeName.split(":")[0];
+                    var typeName = self.options.typeName.split(":")[1];
+                    var srsName = self.options.srsName ? self.options.requestParams.srsName : "EPSG:4326";
+                    var postData =
+                        '&lt;wfs:Transaction\n'
+                     +  'version="1.1.0"\n'
+                     +  'service="WFS"\n'
+                     +  'xmlns:wfs="http://www.opengis.net/wfs"\n'
+                     +  'xmlns:' + namespace + '="' + targetNamespace + '">\n'
+                     +  '   &lt;wfs:Insert>\n'
+                     +  '       &lt;' + self.options.typeName + ' xmlns:feature="' + self.options.serverURL + '">\n'
+                     +  '           &lt;' + namespace + ':the_geom>\n'
+                     +  '               &lt;gml:' + geom_type + ' xmlns:gml="http://www.opengis.net/gml" srsName="' + srsName + '">\n'
+                     +  '                   &lt;gml:pos>' + geometry.getLatLng().lng + ' ' + geometry.getLatLng().lat + '&lt;/gml:pos>\n'
+                     +  '               &lt;/gml:' + geom_type + '>\n'
+                     +  '           &lt;/' + namespace + ':the_geom>\n'
+                     +  '       &lt;/' + self.options.typeName + '>\n'
+                     +  '   &lt;/wfs:Insert>\n'
+                     +  '&lt;/wfs:Transaction>\n';
+
+                    self._sendRequest("POST", self.options.serverURL, postData, function(xml){
+                        self._getLastFeature();
+                    });
+                }
+            });
+        },
+        /**
+         * Method to prepare WFS-T request payload to update a geometry
+         * @private
+         * @param {object} geometry - element to be updated
+         */
+        _update: function(geometry){
+        	var self = this;
+            var srsName = self.options.srsName ? self.options.requestParams.srsName : "EPSG:4326";
+            var wfs_elements = "";
+            geometry.eachLayer(function (layer) {
+                // Update the edited features
+                wfs_elements += self._getWFSUpdate(layer, srsName);
+            });
+            var postData =
+                '&lt;wfs:Transaction\n'
+             +  'version="1.1.0"\n'
+             +  'service="WFS"\n'
+             +  'xmlns:wfs="http://www.opengis.net/wfs">\n'
+             +  wfs_elements
+             +  '&lt;/wfs:Transaction>\n';
+
+            this._sendRequest("POST", this.options.serverURL, postData);
+        },
+        /**
+         * Method to prepare WFS-T request payload to delete a geometry
+         * @private
+         * @param {object} geometry - element to be removed
+         */
+        _delete: function(geometry){
+        	var self = this;
+            var typeName = self.options.typeName.split(":")[1];
+            var wfs_elements = "";
+            geometry.eachLayer(function (layer) {
+                // Update the edited features
+                wfs_elements += self._getWFSDelete(typeName, layer.feature.id);
+            });
+
+            var postData =
+                '&lt;wfs:Transaction\n'
+             +  'version="1.1.0"\n'
+             +  'service="WFS"\n'
+             +  'xmlns:wfs="http://www.opengis.net/wfs">\n'
+             +  wfs_elements
+             +  '&lt;/wfs:Transaction>\n';
+
+            this._sendRequest("POST", this.options.serverURL, postData);
+        },
+        /**
+         * Method to send WFS-T request
+         * @private
+         * @param {strin} url - url server where send request
+         * @param {string} data - request payload
+         */
+        _sendRequest: function(type, url, data, method){
+        	$.ajax({
+                type: type,
+                url: url,
+                dataType: "xml",
+                contentType: "text/xml",
+                data: data,
+                success: method
+            });
+        },
+        /**
+         * Method to get the geometry type
+         * @private
+         * @param {Object} geometry - Geometry to get type
+         * @returns {string} geometry type
+         */
+        _getGeomType: function(geometry){
+            var geom_type = null;
+            if(geometry instanceof L.Marker || geometry instanceof L.Point){
+                geom_type = "Point";
+            }
+            return geom_type;
+        },
+        /**
+         * Method to get the wfs delete request
+         * @private
+         * @param {Object} typeName - type name layer
+         * @param {string} featureId - id from the element to remove
+         * @returns {string} request filter to remove elements
+         */
+        _getWFSDelete: function(typeName, featureId){
+            var res = 
+                '   &lt;wfs:Delete typeName="feature:' + typeName + '" xmlns:feature="http://opengeo.org">\n'
+             +  '       &lt;ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">\n'
+             +  '           &lt;ogc:FeatureId fid="' + featureId + '"/>\n'
+             +  '       &lt;/ogc:Filter>\n'
+             +  '   &lt;/wfs:Delete>\n';
+            return res;
+        },
+        /**
+         * Method to get the wfs update request
+         * @private
+         * @param {Object} geometry - type name layer
+         * @param {string} srsName - layer srs
+         * @returns {string} request filter to update elements
+         */
+        _getWFSUpdate: function(geometry, srsName){
+            var geom_type = this._getGeomType(geometry);
+            var typeName = this.options.typeName.split(":")[1];
+            var res =
+                '   &lt;wfs:Update typeName="feature:' + typeName + '" xmlns:feature="http://opengeo.org">\n'
+             +  '       &lt;wfs:Property>\n'
+             +  '           &lt;wfs:Name>the_geom&lt;/wfs:Name>\n'
+             +  '           &lt;wfs:Value>\n'
+             +  '               &lt;gml:' + geom_type + ' xmlns:gml="http://www.opengis.net/gml" srsName="' + srsName + '">\n'
+             +  '                   &lt;gml:pos>' + geometry.getLatLng().lng + ' ' + geometry.getLatLng().lat + '&lt;/gml:pos>\n'
+             +  '               &lt;/gml:' + geom_type + '>\n'
+             +  '           &lt;/wfs:Value>\n'
+             +  '       &lt;/wfs:Property>\n'
+             +  '       &lt;ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">\n'
+             +  '           &lt;ogc:FeatureId fid="' + geometry.feature.id + '"/>\n'
+             +  '       &lt;/ogc:Filter>\n'
+             +  '   &lt;/wfs:Update>\n';
+             return res;
+        }
+	}
+);
+ /**
+ * API factory method for ease creation of wfs features providers.
+ * @params {Object} options - Options to initialize the WFS provider
+ */
+SMC.wfstProvider = function(options) {
+    return new SMC.providers.WFSTProvider(options);
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeControl.html">LayerTreeControl</a></li><li><a href="SMC.controls.layerTree.LayerTreeLeaf.html">LayerTreeLeaf</a></li><li><a href="SMC.controls.layerTree.LayerTreeNode.html">LayerTreeNode</a></li><li><a href="SMC.layers.aggregation.AggregatingLayer.html">AggregatingLayer</a></li><li><a href="SMC.layers.aggregation.MultiModeLayer.html">MultiModeLayer</a></li><li><a href="SMC.layers.EditableLayer.html">EditableLayer</a></li><li><a href="SMC.layers.Folder.html">Folder</a></li><li><a href="SMC.layers.geometry.CanvasRenderer.html">CanvasRenderer</a></li><li><a href="SMC.layers.geometry.GeometryLayer.html">GeometryLayer</a></li><li><a href="SMC.layers.geometry.TiledGeometryLayer.html">TiledGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSGeometryLayer.html">WFSGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html">WFSTiledGeometryLayer</a></li><li><a href="SMC.layers.history.AggregatingHistoryLayer.html">AggregatingHistoryLayer</a></li><li><a href="SMC.layers.history.DataHistoryLayer.html">DataHistoryLayer</a></li><li><a href="SMC.layers.Layer.html">Layer</a></li><li><a href="SMC.layers.markers.AtmosphereRTMarkerLayer.html">AtmosphereRTMarkerLayer</a></li><li><a href="SMC.layers.markers.MarkerLayer.html">MarkerLayer</a></li><li><a href="SMC.layers.markers.WFSMarkerLayer.html">WFSMarkerLayer</a></li><li><a href="SMC.layers.markers.WFSTMarkerLayer.html">WFSTMarkerLayer</a></li><li><a href="SMC.layers.reloaders.LayerReloader.html">LayerReloader</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html">ReloadTrigger</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html">TimerReloadTrigger</a></li><li><a href="SMC.layers.stylers.Styler.html">Styler</a></li><li><a href="SMC.layers.TileLayer.html">TileLayer</a></li><li><a href="SMC.layers.WMSLayer.html">WMSLayer</a></li><li><a href="SMC.Map.html">Map</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html">AtmosphereRTFeatureProvider</a></li><li><a href="SMC.providers.FeatureHistory.html">FeatureHistory</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html">FeatureHistoryProvider</a></li><li><a href="SMC.providers.FeaturesProvider.html">FeaturesProvider</a></li><li><a href="SMC.providers.RTFeatureProvider.html">RTFeatureProvider</a></li><li><a href="SMC.providers.URLFeatureProvider.html">URLFeatureProvider</a></li><li><a href="SMC.providers.WFSProvider.html">WFSProvider</a></li><li><a href="SMC.providers.WFSTProvider.html">WFSTProvider</a></li></ul><h3>Events</h3><ul><li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html#event:featureHistoryLoaded">featureHistoryLoaded</a></li><li><a href="SMC.providers.FeaturesProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.RTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.URLFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSTProvider.html#event:featuresLoaded">featuresLoaded</a></li></ul><h3>Namespaces</h3><ul><li><a href="SMC.html">SMC</a></li><li><a href="SMC.controls.html">controls</a></li><li><a href="SMC.controls.layerTree.html">layerTree</a></li><li><a href="SMC.layers.html">layers</a></li><li><a href="SMC.layers.aggregation.html">aggregation</a></li><li><a href="SMC.layers.geometry.html">geometry</a></li><li><a href="SMC.layers.history.html">history</a></li><li><a href="SMC.layers.markers.html">markers</a></li><li><a href="SMC.layers.reloaders.html">reloaders</a></li><li><a href="SMC.layers.stylers.html">stylers</a></li><li><a href="SMC.providers.html">providers</a></li></ul><h3>Mixins</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeFolder.html">LayerTreeFolder</a></li><li><a href="SMC.LayerLoader.html">LayerLoader</a></li><li><a href="SMC.layers.SingleLayer.html">SingleLayer</a></li><li><a href="SMC.layers.stylers.MapCssStyler.html">MapCssStyler</a></li><li><a href="SMC.layers.stylers.MarkerCssStyler.html">MarkerCssStyler</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Mustache">Mustache</a></li><li><a href="global.html#paper">paper</a></li><li><a href="global.html#PEG">PEG</a></li><li><a href="global.html#rbush">rbush</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha8</a> on Wed Jul 30 2014 10:34:07 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -17,6 +17,10 @@ SMC.layers.aggregation.MultiModeLayer = SMC.layers.aggregation.AggregatingLayer.
 	{
 		node: null,
 
+		 /**
+         * Initialize the object with the params
+         * @param {object} options - default options
+         */
 		initialize: function(options) {
 			L.Util.setOptions(this, options);
 			SMC.layers.aggregation.AggregatingLayer.prototype.initialize.apply(this, arguments);
@@ -24,7 +28,10 @@ SMC.layers.aggregation.MultiModeLayer = SMC.layers.aggregation.AggregatingLayer.
 			this.checked = true;
 		},
 
-
+		 /**
+         * Method to create an HTML node for the name of the layer.
+         * @returns {String} HTML code representing the code to be added to the layer's entry in the layer tree.
+         */
 		createNodeHTML: function() {
 
 			var node = document.createElement("div");
@@ -104,6 +111,9 @@ SMC.layers.aggregation.MultiModeLayer = SMC.layers.aggregation.AggregatingLayer.
 			};
 		},
 
+		/**
+         * Retrieves the features from its source.
+         */
 		load: function() {
 
 		},

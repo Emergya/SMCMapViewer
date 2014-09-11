@@ -181,7 +181,7 @@ SMC.providers.WFSTProvider = SMC.providers.WFSProvider.extend(
         }
 	}, [SMC.providers.WFSProvider]);
  /**
- * API factory method for ease creation of wfs features providers.
+ * API factory method for ease creation of wfst provider.
  * @params {Object} options - Options to initialize the WFS provider
  */
 SMC.wfstProvider = function(options) {

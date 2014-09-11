@@ -32,6 +32,7 @@ SMC.layers.stylers.MapCssStyler = SMC.layers.stylers.Styler.extend(
          * @param {object} feature - An object that represents the geometry element being styled.
          * @param {object} ctx - An object that represents the context function.
          * @param {string} zoom - Number that represents the level zoom to apply the style.
+         * @returns {object} style from the feature
          */
         applyStyle: function(feature, ctx, zoom) {
 
@@ -138,6 +139,7 @@ SMC.layers.stylers.MapCssStyler = SMC.layers.stylers.Styler.extend(
          * Adds style label to the received features, so the can be represented as intended by the style for the layer.
          * @param {object} feature - An object that represents the geometry element being styled.
          * @param {string} zoom - Number that represents the level zoom to apply the style.
+         * @returns {objects} style from feature label
          */
         addLabelStyle: function(feature, zoom) {
 
@@ -199,6 +201,7 @@ SMC.layers.stylers.MapCssStyler = SMC.layers.stylers.Styler.extend(
          * Adds style popup to the received features, so the can be represented as intended by the style for the layer.
          * @param {object} feature - An object that represents the geometry element being styled.
          * @param {string} zoom - Number that represents the level zoom to apply the style.
+         * @returns {object} style from feature popup
          */
         addPopUp: function(feature, zoom) {
             var style = feature._styles.popUpStyle;

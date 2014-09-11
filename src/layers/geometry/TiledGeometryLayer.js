@@ -50,7 +50,7 @@ SMC.layers.geometry.TiledGeometryLayer = L.TileLayer.Canvas.extend(
         /**
          * Tiles load variable
          * @property {number} tilesLoad - Default tiles load variable
-         * @default 1
+         * @default 0
          */
         tilesLoad: 0,
         /**
@@ -131,6 +131,10 @@ SMC.layers.geometry.TiledGeometryLayer = L.TileLayer.Canvas.extend(
 
         },
 
+         /**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be removed
+         */
         onRemove: function(map) {
             SMC.layers.geometry.CanvasRenderer.prototype.onRemove.call(this);
             L.TileLayer.Canvas.prototype.onRemove.call(this, map);
@@ -138,6 +142,10 @@ SMC.layers.geometry.TiledGeometryLayer = L.TileLayer.Canvas.extend(
 
         },
 
+         /**
+         * Method to get the map
+         * @returns {SMC.Map} map - Map layer
+         */
         getMap: function() {
             return this._map;
         },

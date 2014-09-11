@@ -32,17 +32,28 @@ SMC.layers.history.AggregatingHistoryLayer = SMC.layers.aggregation.AggregatingL
 			throw new Error("Unimplemented method!");
 			
 		},
+
+		/**
+         * Method to load the layer on the map
+         */
 		load: function(){
 			
 		},
 
-
+		/**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be added
+         */
 		onAdd: function(map) {	
 			SMC.layers.history.DataHistoryLayer.prototype.onAdd.call(this, map);
             SMC.layers.aggregation.AggregatingLayer.prototype.onAdd.call(this, map);
                      
         },
 
+        /**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be removed
+         */
         onRemove: function(map){
         	SMC.layers.history.DataHistoryLayer.prototype.onRemove.call(this, map);
         	SMC.layers.aggregation.AggregatingLayer.prototype.onRemove.call(this, map);

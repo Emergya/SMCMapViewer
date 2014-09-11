@@ -34,6 +34,10 @@ SMC.layers.SingleLayer = SMC.layers.Layer.extend(
             this.load();
         },
 
+        /**
+         * Method to get the map
+         * @returns {SMC.Map} map - Map layer
+         */
         getMap: function() {
            return this.map;
         }

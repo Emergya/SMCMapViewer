@@ -1,5 +1,5 @@
 /**
- * Namespace for agreggating layers, e.g., layers that are the result of the composition
+ * Namespace for history layers, e.g., layers that are the result of the composition
  * of several other layers.
  *
  * @namespace

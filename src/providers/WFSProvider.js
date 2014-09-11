@@ -62,6 +62,7 @@ SMC.providers.WFSProvider = SMC.providers.URLFeatureProvider.extend(
         },
         /**
          * Send WFS request to get the features
+         * @param {object} bounds - bounds from features
          * @returns {object} Deferred object from jQuery
          */
         doFeaturesLoading: function(bounds) {
@@ -138,7 +139,7 @@ SMC.providers.WFSProvider = SMC.providers.URLFeatureProvider.extend(
     }
 );
 /**
- * API factory method for ease creation of wfs features providers.
+ * API factory method for ease creation of wfs provider.
  * @params {Object} options - Options to initialize the WFS provider
  */
 SMC.wfsProvider = function(options) {

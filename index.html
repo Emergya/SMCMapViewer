@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Index</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Index</h1>
+
+    
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>SMCMapViewer</h1><p>SMCMapViewer is a Map Viewer Component based on Leaflet that allow us to create a map viewer of an easily way. Using this tool you can add layers with different data providers like WMS, WFS and markers layers. This tool allows us to add a customer style to all over elements on a layer, from a style description in mapCSS format.</p>
+<h2>Quick Start Guide</h2><p>This step-by-step guide will quickly get you started on SMCMapViewer basics, including setting up a SMCMapViewer map, working with markers, wfs and wms layers, and adding custom style to objects.</p>
+<pre>
+<iframe src="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/index_doc.html" style="width: 100%;height: 300px;"></iframe>
+</pre>
+
+<p><a href="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/index_doc.html">View example on a separate page →</a></p>
+<h3>Preparing your page</h3><p>Before writing any code for the map, you need to do the following preparation steps on your page:</p>
+<ul>
+<li>Include Leaflet CSS file in the head section of your document:</li>
+</ul>
+<blockquote>
+<p><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;http://rawgit.com/Emergya/SMCMapViewer-dist/master/css/leaflet.css&quot; /&gt;</code></p>
+</blockquote>
+<ul>
+<li>Include jQuery JavaScript file:</li>
+</ul>
+<blockquote>
+<p><code>&lt;script src=&quot;http://code.jquery.com/jquery-1.11.1.js&quot;&gt;&lt;/script&gt;</code></p>
+</blockquote>
+<ul>
+<li>Include SMCViewerMap Javascript file:</li>
+</ul>
+<blockquote>
+<p><code>&lt;script src=&quot;http://rawgit.com/Emergya/SMCMapViewer-dist/master/smc.viewer-bundle.js&quot;&gt;&lt;/script&gt;</code></p>
+</blockquote>
+<ul>
+<li>Put a <em>div</em> element with a certain id where you want your map to be:</li>
+</ul>
+<blockquote>
+<p><code>&lt;div id=&quot;map&quot;&gt;&lt;/div&gt;</code></p>
+</blockquote>
+<ul>
+<li>Make sure the map container has a defined height, for example by setting it in CSS:</li>
+</ul>
+<blockquote>
+<p><code>#map { height: 180px; }</code></p>
+</blockquote>
+<p>Now you’re ready to initialize the map and do some stuff with it.</p>
+<h3>Setting up the map</h3><p>Let’s create a map of the center of Seville with pretty Cloudmade tiles. First we’ll initialize the map and set its view to our chosen geographical coordinates and a zoom level:</p>
+<pre class="prettyprint source"><code>var map = SMC.map('map').setView([37.383333, -5.983333], 11);</code></pre><p>By default (as we didn’t pass any options when creating the map instance), all mouse and touch interactions on the map are enabled, and it has zoom and attribution controls.</p>
+<p>Next we’ll add a tile layer to add to our map, in this case it’s a Cloudmade tile layer. Creating a tile layer usually involves setting the URL template for the tile images, the attribution text and the maximum zoom level of the layer:</p>
+<pre class="prettyprint source"><code>var base = SMC.tileLayer('http://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+    maxZoom: 18
+}).addTo(map);</code></pre><p>Make sure all the code is called after the div and smc.viewer-bundle.js inclusion. That’s it! You have a working SMCViewerMap map now.</p>
+<h3>Add WMS Layer to map</h3><pre>
+<iframe src="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_wms_layer.html" style="width: 100%;height: 300px;"></iframe>
+</pre>
+
+<p><a href="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_wms_layer.html">View example on a separate page →</a></p>
+<p>To add a wms layer to the map we're going to need first of all create the layer. To do that we need the url of the service and the name of the layer that it'll be load.</p>
+<pre class="prettyprint source"><code>var satelite = SMC.wmsLayer("http://www.idee.es/wms/PNOA/PNOA", {
+    layers: "PNOA",
+    format: 'image/png',
+    transparent: true,
+    crs: L.CRS.EPSG4326,
+    attribution: "Map data © Instituto Geográfico Nacional de España"
+}).addTo(map);</code></pre><h3>Add Marker Layer</h3><pre>
+<iframe src="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_marker_layer.html" style="width: 100%;height: 300px;"></iframe>
+</pre>
+
+<p><a href="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_marker_layer.html">View example on a separate page →</a></p>
+<p>Let's create a marker layer to add to map. </p>
+<h3>Add WFS Marker Layer to map</h3><pre>
+<iframe src="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_wfs_marker_layer.html" style="width: 100%;height: 300px;"></iframe>
+</pre>
+
+<p><a href="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_wfs_marker_layer.html">View example on a separate page →</a></p>
+<p>Let's create a wfs marker layer to add to map. To do this we have to know the url service and the typename to get. We also can add a label with the layer name to add to layer tree panel.</p>
+<pre class="prettyprint source"><code>var wfsMarkerLayer = SMC.wfsMarkerLayer({
+    serverURL: "http://www.juntadeandalucia.es/medioambiente/mapwms/REDIAM_WFS_SP_Infraestructuras_Hidraulicas",
+    typeName: "edar",
+    label: "Prueba WFS"
+}).addTo(map);</code></pre><h3>Add WFS-T Marker Layer to map</h3><pre>
+<iframe src="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_wfst_marker_layer.html" style="width: 100%;height: 300px;"></iframe>
+</pre>
+
+<p><a href="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_wfst_marker_layer.html">View example on a separate page →</a></p>
+<p>Let's create a WFS-T marker layer to add to map. This kind of layers add the posibility to add new markers, update the existed markes and delete it. Let's see how it's possible. We need to know the url service and the typename feature to get it. In the same way that we add a WFS marker layer to add layer tree panel.</p>
+<pre class="prettyprint source"><code>var wfstMarkerLayer = SMC.wfstMarkerLayer({
+    serverURL: "http://www.juntadeandalucia.es/medioambiente/mapwms/REDIAM_WFS_SP_Infraestructuras_Hidraulicas",
+    typeName: "edar",
+    label: "Prueba WFS"
+}).addTo(map);</code></pre><p>When yo add this kind of layer, in the tree panel you could see a layer with two buttons, &quot;Start Edition&quot; and &quot;Finish Edition&quot;.
+Both use to start edition state of the layer and add an edit control to the map, and to finish edition state of the layer and remove the edit control from the map added before.</p>
+<p>How we can use it to add a new marker?</p>
+<p>Pre-requisite: WFS-T Marker Layer added to the map
+1.- Click Start Edition button and it's added an edit control to the map on left side
+2.- Click marker icon button (first one on the edit control)
+3.- Click map to place marker
+4.- Automatically its marker have been saved on the server
+5.- Click Finish Edition button and the edit control will be removed from the map</p>
+<p>How we can use it to edit a marker?</p>
+<p>Pre-requisite: WFS-T Marker Layer added to the map
+1.- Click Start Edition button and it's added an edit control to the map on left side
+2.- Click edit icon button (second one on the edit control)
+3.- Click on marker to move
+4.- Click save option into edit control panel
+5.- Automatically its marker have been saved on the server
+6.- Click Finish Edition button and the edit control will be removed from the map</p>
+<p>How we can use it to remove a marker?</p>
+<p>Pre-requisite: WFS-T Marker Layer added to the map
+1.- Click Start Edition button and it's added an edit control to the map on left side
+2.- Click remove icon button (third one on the edit control)
+3.- Click on marker to remove (we can remove more than one marke at the same time)
+4.- Click save option into edit control panel
+5.- Automatically its marker have been saved on the server
+6.- Click Finish Edition button and the edit control will be removed from the map</p>
+<h3>Add Layer Tree to map</h3><pre>
+<iframe src="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_layer_tree.html" style="width: 100%;height: 300px;"></iframe>
+</pre>
+
+<p><a href="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_layer_tree.html">View example on a separate page →</a></p>
+<p>Let's create a map with a layer tree where we could load a serie of layers. First, as we have been before, create a map and after that we are going to create two base layers. </p>
+<pre class="prettyprint source"><code>var map = SMC.map('map').setView([37.383333, -5.983333], 11);
+
+var base = SMC.tileLayer('http://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+    maxZoom: 18
+}).addTo(map);
+
+var satelite = SMC.wmsLayer("http://www.idee.es/wms/PNOA/PNOA", {
+    layers: "PNOA",
+    format: 'image/png',
+    transparent: true,
+    crs: L.CRS.EPSG4326,
+    attribution: "Map data © Instituto Geográfico Nacional de España"
+}).addTo(map); </code></pre><p>Next we'll add the layer tree to the map. To do that we need to create a layer tree control and add it the base layers create before.</p>
+<pre class="prettyprint source"><code>var baseLayer = {
+    "Street Map": base,
+    "Satelite": satelite
+};
+
+var leyenda = SMC.layerTreeControl(baseLayer, {
+    collapsed: false
+}).addTo(map);</code></pre><h3>Add Layer to Layer Tree Dinamically</h3><pre>
+<iframe src="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_layer_to_layer_tree.html" style="width: 100%;height: 300px;"></iframe>
+</pre>
+
+<p><a href="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_layer_to_layer_tree.html">View example on a separate page →</a></p>
+<p>Once we have added the layer tree panel to the map, we have the possibility to add new layers dinamically to the layer tree. On this way when we add a new layer to map automatically we can see on the layer tree. Simply add a parameter which name is label. We use this one to add a name on the layer tree panel.</p>
+<pre class="prettyprint source"><code>var satelite = SMC.wmsLayer("http://www.idee.es/wms/PNOA/PNOA", {
+    layers: "PNOA",
+    format: 'image/png',
+    transparent: true,
+    crs: L.CRS.EPSG4326,
+    label: "PNOA",
+    attribution: "Map data © Instituto Geográfico Nacional de España"
+}).addTo(map);</code></pre><h3>Add Tree Config to Layer Tree from JSON</h3><pre>
+<iframe src="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_tree_to_layer_tree.html" style="width: 100%;height: 500px;"></iframe>
+</pre>
+
+<p><a href="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_tree_to_layer_tree.html">View example on a separate page →</a></p>
+<p>Before to add a tree config we need define into html file the next:</p>
+<ul>
+<li>Include LayerTree CSS file in the head section of your document:</li>
+</ul>
+<blockquote>
+<p><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;http://rawgit.com/Emergya/SMCMapViewer-dist/master/css/layerTree.css&quot; /&gt;</code></p>
+</blockquote>
+<ul>
+<li>Include Font Awesome CSS file in the head section of your document:</li>
+</ul>
+<blockquote>
+<p><code>&lt;link href=&quot;http://netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css&quot; rel=&quot;stylesheet&quot;&gt;</code></p>
+</blockquote>
+<p>To add a structure of a folder and layer set we need to define a variable with the tree config content. This tree config have a specific format that it's composed by folders and layers. To define a folder we need to declare an object with a property type which value was folder. To define a layer we need to declare an object with a property type which value was the layer type, for example if the layer was a WMS layer the type will be SMC.layers.WMSLayer.</p>
+<p>Next we'll nedd to define a label to add the name of the layer or folder with a property label which value was the folder or layer name. In the same case for a url layer, if it's a WMS layer we need to add the url property which value will be the url where the layer is.</p>
+<p>The rest of parameters that we're going to need, we'll add it to the params property that it'll be an objects array.</p>
+<p>An example with the format specified is:</p>
+<pre class="prettyprint source"><code>var tree = [{
+    type: "folder",
+    label: 'REDIAM',
+    layers: [{
+        type: "folder",
+        label: "Paisajes",
+        layers: [{
+            type: "SMC.layers.WMSLayer",
+            url: "http://www.juntadeandalucia.es/medioambiente/mapwms/REDIAM_mapa_paisaje_andalucia",
+            params: [{
+                layers: "categ_paisaj",
+                format: 'image/png',
+                transparent: true,
+                crs: L.CRS.EPSG4326,
+                attribution: "Map data &copy; REDIAM",
+                label: "Categorias paisajisticas"
+            }] 
+        },{
+            type: "folder",
+            label: "Capas WFS",
+            layers: [{
+                type: "SMC.layers.markers.WFSMarkerLayer",
+                params: [{
+                    serverURL: "http://www.ideandalucia.es/dea100/wfs",
+                    typeName: "ideandalucia:it03_aeropuerto_pun",
+                    label: "Prueba WFS",
+                    outputFormat: "json"
+                }]
+            }]
+        }]
+    }]
+}];</code></pre><p>To add this configuration to the tree panel it's necessary define before a map and a layer tree panel. Once both are defined we'll add this configuration variable to the map, like this:</p>
+<pre class="prettyprint source"><code>    map.loadLayers(tree);</code></pre><h3>Add Style to Layer</h3><pre>
+<iframe src="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_style_to_layer.html" style="width: 100%;height: 300px;"></iframe>
+</pre>
+
+<p><a href="http://rawgit.com/Emergya/SMCMapViewer-dist/master/examples/add_style_to_layer.html">View example on a separate page →</a></p>
+<p>Before you add the code to add style to layer, we need to define the style format. To do this, we're going to make a string with the style that we want to apply to the layer. The style format will be on mapCSS.</p>
+<blockquote>
+<p><code>var stylesheet = '* {htmlTemplate:&quot;&lt;i class=fa fa-plane fa-2x marker_red&gt;&lt;/i&gt;&quot;;} * |z13- {htmlTemplate:&quot;&lt;i class=fa fa-plane fa-2x marker_blue&gt;&lt;/i&gt;&quot;;}';</code></p>
+</blockquote>
+<p>Add this style to layer:</p>
+<pre class="prettyprint source"><code>var wfsMarkerLayer = SMC.wfsMarkerLayer({
+    serverURL: "http://www.ideandalucia.es/dea100/wfs",
+    typeName: "ideandalucia:it03_aeropuerto_pun",
+    label: "Prueba WFS",
+    outputFormat: "json",
+    stylesheet: stylesheet
+}).addTo(map);</code></pre></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeControl.html">LayerTreeControl</a></li><li><a href="SMC.controls.layerTree.LayerTreeLeaf.html">LayerTreeLeaf</a></li><li><a href="SMC.controls.layerTree.LayerTreeNode.html">LayerTreeNode</a></li><li><a href="SMC.layers.aggregation.AggregatingLayer.html">AggregatingLayer</a></li><li><a href="SMC.layers.aggregation.MultiModeLayer.html">MultiModeLayer</a></li><li><a href="SMC.layers.EditableLayer.html">EditableLayer</a></li><li><a href="SMC.layers.Folder.html">Folder</a></li><li><a href="SMC.layers.geometry.CanvasRenderer.html">CanvasRenderer</a></li><li><a href="SMC.layers.geometry.GeometryLayer.html">GeometryLayer</a></li><li><a href="SMC.layers.geometry.TiledGeometryLayer.html">TiledGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSGeometryLayer.html">WFSGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html">WFSTiledGeometryLayer</a></li><li><a href="SMC.layers.history.AggregatingHistoryLayer.html">AggregatingHistoryLayer</a></li><li><a href="SMC.layers.history.DataHistoryLayer.html">DataHistoryLayer</a></li><li><a href="SMC.layers.Layer.html">Layer</a></li><li><a href="SMC.layers.markers.AtmosphereRTMarkerLayer.html">AtmosphereRTMarkerLayer</a></li><li><a href="SMC.layers.markers.MarkerLayer.html">MarkerLayer</a></li><li><a href="SMC.layers.markers.WFSMarkerLayer.html">WFSMarkerLayer</a></li><li><a href="SMC.layers.markers.WFSTMarkerLayer.html">WFSTMarkerLayer</a></li><li><a href="SMC.layers.reloaders.LayerReloader.html">LayerReloader</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html">ReloadTrigger</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html">TimerReloadTrigger</a></li><li><a href="SMC.layers.stylers.Styler.html">Styler</a></li><li><a href="SMC.layers.TileLayer.html">TileLayer</a></li><li><a href="SMC.layers.WMSLayer.html">WMSLayer</a></li><li><a href="SMC.Map.html">Map</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html">AtmosphereRTFeatureProvider</a></li><li><a href="SMC.providers.FeatureHistory.html">FeatureHistory</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html">FeatureHistoryProvider</a></li><li><a href="SMC.providers.FeaturesProvider.html">FeaturesProvider</a></li><li><a href="SMC.providers.RTFeatureProvider.html">RTFeatureProvider</a></li><li><a href="SMC.providers.URLFeatureProvider.html">URLFeatureProvider</a></li><li><a href="SMC.providers.WFSProvider.html">WFSProvider</a></li><li><a href="SMC.providers.WFSTProvider.html">WFSTProvider</a></li></ul><h3>Events</h3><ul><li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html#event:featureHistoryLoaded">featureHistoryLoaded</a></li><li><a href="SMC.providers.FeaturesProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.RTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.URLFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSTProvider.html#event:featuresLoaded">featuresLoaded</a></li></ul><h3>Namespaces</h3><ul><li><a href="SMC.html">SMC</a></li><li><a href="SMC.controls.html">controls</a></li><li><a href="SMC.controls.layerTree.html">layerTree</a></li><li><a href="SMC.layers.html">layers</a></li><li><a href="SMC.layers.aggregation.html">aggregation</a></li><li><a href="SMC.layers.geometry.html">geometry</a></li><li><a href="SMC.layers.history.html">history</a></li><li><a href="SMC.layers.markers.html">markers</a></li><li><a href="SMC.layers.reloaders.html">reloaders</a></li><li><a href="SMC.layers.stylers.html">stylers</a></li><li><a href="SMC.providers.html">providers</a></li></ul><h3>Mixins</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeFolder.html">LayerTreeFolder</a></li><li><a href="SMC.LayerLoader.html">LayerLoader</a></li><li><a href="SMC.layers.SingleLayer.html">SingleLayer</a></li><li><a href="SMC.layers.stylers.MapCssStyler.html">MapCssStyler</a></li><li><a href="SMC.layers.stylers.MarkerCssStyler.html">MarkerCssStyler</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Mustache">Mustache</a></li><li><a href="global.html#paper">paper</a></li><li><a href="global.html#PEG">PEG</a></li><li><a href="global.html#rbush">rbush</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha8</a> on Wed Jul 30 2014 10:34:07 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

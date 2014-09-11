@@ -1,6 +1,7 @@
 require("./Styler.js");
 require("../../../lib/LeafletHtmlIcon.js");
 var Mustache = require("../../../lib/mustache.js/mustache.js");
+
 /**
  * Parser of MarkerCSS, for user with SMC Viewer's marker layers.
  *
@@ -26,6 +27,7 @@ SMC.layers.stylers.MarkerCssStyler = SMC.layers.stylers.Styler.extend(
          * Adds style properties to the received features, so the can be represented as intended by the style for the layer.
          * @param {object} feature - An object that represents the geometry element being styled.
          * @param {string} zoom - Number that represents the level zoom to apply the style.
+         * @returns {object} style from the marker
          */
         applyStyle: function(feature, zoom) {
             var properties = feature.properties;

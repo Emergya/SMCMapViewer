@@ -15,7 +15,10 @@ SMC.layers.TileLayer = L.TileLayer.extend(
     /** @lends SMC.layers.TileLayer# */
     {
 
-
+         /**
+         * Initialize the class with options parameter
+         * @param {object} options - default options
+         */
         initialize: function(options) {
             if (!options.url || typeof(options.url) !== "string") {
                 throw new Error("SMC.layers.TileLayer::initialize: options must contain an url attribute of type string.");
@@ -24,11 +27,18 @@ SMC.layers.TileLayer = L.TileLayer.extend(
             SMC.layers.SingleLayer.prototype.initialize.call(this, options);
         },
 
+        /**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be added
+         */
         onAdd: function(map) {
             L.TileLayer.prototype.onAdd.call(this, map);
             SMC.layers.SingleLayer.prototype.onAdd.call(this, map);
         },
 
+        /**
+         * Load a layer's data
+         */
         load: function() {
             if (this._needsload) {
                 this._update();
@@ -36,6 +46,9 @@ SMC.layers.TileLayer = L.TileLayer.extend(
             }
         },
 
+        /**
+         * Unload a layer's data
+         */
         unload: function() {
             this._reset();
             this._needsload = true;

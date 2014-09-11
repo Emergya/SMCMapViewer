@@ -44,7 +44,7 @@ SMC.layers.markers.WFSMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
 
     }, [SMC.providers.WFSProvider]);
 /**
- * API factory method for ease creation of wfs features providers.
+ * API factory method for ease creation of wfs marker layer.
  * @param {Object} options - Options for wfs the provider.
  */
 SMC.wfsMarkerLayer = function(options) {

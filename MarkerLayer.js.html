@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: layers/markers/MarkerLayer.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: layers/markers/MarkerLayer.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>require("./markers.js");
+require("../SingleLayer.js");
+require("../stylers/MarkerCssStyler.js");
+
+require("../../../lib/leaflet.markercluster/dist/leaflet.markercluster-src.js");
+require("../../../lib/LeafletHtmlIcon.js");
+
+
+/**
+ * Base layer for all SMC map viewer's layers rendered using markers.
+ * @class
+ * @abstract
+ * @mixes SMC.layers.SingleLayer
+ * @mixes SMC.layers.stylers.MarkerCssStyler
+ */
+SMC.layers.markers.MarkerLayer = L.FeatureGroup.extend(
+    /** @lends SMC.layers.markers.MarkerLayer# */
+    {
+        includes: SMC.Util.deepClassInclude([SMC.layers.SingleLayer, SMC.layers.stylers.MarkerCssStyler]),
+
+        _markersMap: {},
+
+        /**
+         * Initialize the class with options parameter
+         * @param {object} options - default options
+         */
+        initialize: function(options) {
+            this.clusterGroup = new L.MarkerClusterGroup({
+                polygonOptions: {
+                    fill: false,
+                    stroke: false
+                }
+            });
+
+            this.noClusterGroup = new L.FeatureGroup();
+            SMC.layers.stylers.MarkerCssStyler.prototype.initialize.apply(this, arguments);
+
+
+        },
+
+        /**
+         * Method to remove a layer from the map
+         * @param {SMC.Layers.Layer} layer - default options
+         */
+        removeLayer: function(layer) {
+            if (this.clusterGroup.hasLayer(layer)) {
+                this.clusterGroup.removeLayer(layer);
+            } else if (this.noClusterGroup.hasLayer(layer)) {
+                this.noClusterGroup.removeLayer(layer);
+            } else {
+                this._map.removeLayer(layer);
+            }
+
+        },
+        /**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be added
+         */
+        onAdd: function(map) {
+            this.onRemove(map);
+            SMC.layers.SingleLayer.prototype.onAdd.call(this, map);
+            L.FeatureGroup.prototype.onAdd.call(this, map);
+            if (this._slidermove) {
+                this.noClusterGroup._slidermove = true;
+                this.clusterGroup._slidermove = true;
+            }
+            map.addLayer(this.noClusterGroup);
+            map.addLayer(this.clusterGroup);
+
+            if (map) {
+                map.on("zoomend", this._onViewChanged, this);
+            }
+        },
+        /**
+         * Method to remove the control in the map
+         * @param {SMC.Map} map - Map to be added
+         */
+        onRemove: function(map) {
+            var self = this;
+
+            var clusterGroup = this.clusterGroup.getLayers();
+            $.each(clusterGroup, function(index, marker) {
+                marker.parent = self;
+            });
+            this.clusterGroup.clearLayers();
+            map.removeLayer(this.clusterGroup);
+
+
+            var noClusterGroup = this.noClusterGroup.getLayers();
+            $.each(noClusterGroup, function(index, marker) {
+                marker.parent = self;
+            });
+            this.noClusterGroup.clearLayers();
+            map.removeLayer(this.noClusterGroup);
+
+            L.FeatureGroup.prototype.onRemove.call(this, map);
+
+            if (map) {
+                map.off("zoomend", this._onViewChanged, this);
+            }
+
+        },
+
+        /**
+         * Method to add layer on the map
+         * @param {SMC.layers.Layer} layer - layer to be added
+         */
+        addLayer: function(layer) {
+
+            if (layer instanceof L.Marker) {
+                var marker = layer;
+                this._applyStyles(marker);
+
+                marker.on("click", function() {
+                    this.onFeatureClicked(marker);
+                }, this);
+
+                return marker;
+
+            } else
+                throw new Error("This is not a marker");
+
+        },
+
+        _sendFeatures: function(features) {
+            var self = this;
+            $.each(features, function(index, feature) {
+                self._addMarker(feature);
+            });
+        },
+
+        /**
+         * Method to load markers from fetaures on the map
+         * @param {object} features - features to be added
+         */
+        addMarkerFromFeature: function(features) {
+            if (L.Util.isArray(features)) {
+                this._sendFeatures(features);
+            } else if (arguments.length > 1) {
+                this._sendFeatures(arguments);
+            } else {
+                this._sendFeatures([features]);
+            }
+        },
+
+        _addMarker: function(f) {
+
+            if (!f.geometry || !f.geometry) {
+                console.debug("Received no Feature object");
+                return;
+            }
+
+            // For GeoJSON standar the first coordinate is the longitude
+            // Documentation http://geojson.org/geojson-spec.html#positions
+            var markerLocation;
+            if (L.Util.isArray(f.geometry.coordinates)) {
+                markerLocation = new L.LatLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
+            } else {
+                markerLocation = new L.LatLng(f.geometry.coordinates.latitude, f.geometry.coordinates.longitude);
+            }
+
+            var marker = new L.Marker(markerLocation);
+            // We store this here so is avalaible later, on restylings because of zoom changes.
+            marker.feature = f;
+
+            var featureId = f[this.options.idField];
+            this._markersMap[featureId] = marker;
+
+            this.addLayer(marker);
+        },
+
+        /**
+         * Method to run wjen a feature has been clicked
+         * @param {object} feature - feature clicked
+         */
+        onFeatureClicked: function(feature) {
+            this.fireEvent("featureClick", feature);
+            //alert(feature.properties.name);
+        },
+
+        _applyStyles: function(marker, inCluster) {
+            if (!marker.feature) {
+                this.noClusterGroup.addLayer(marker);
+                return;
+            }
+
+            var zoom = map.getZoom();
+            var style = this.applyStyle(marker.feature, zoom);
+            if (style.icon) {
+                marker.setIcon(style.icon);
+            }
+            if (style.opacity) {
+                marker.setOpacity(style.opacity);
+            }
+
+            if (inCluster) {
+                this.clusterGroup.removeLayer(marker);
+            } else {
+                this.noClusterGroup.removeLayer(marker);
+            }
+
+
+
+            if (style.disableClustering) {
+                this.noClusterGroup.addLayer(marker);
+            } else {
+                this.clusterGroup.addLayer(marker);
+            }
+
+
+            this.addPopUp(marker, zoom);
+        },
+
+        _onViewChanged: function() {
+            var markersCluster = this.clusterGroup.getLayers();
+            var markersNoCluster = this.noClusterGroup.getLayers();
+
+            // Recorrer cluster
+            var i, marker;
+            for (i = 0; i &lt; markersCluster.length; i++) {
+                marker = markersCluster[i];
+                if (this.clusterGroup) {
+                    if (this._slidermove) {
+                        marker._slidermove = true;
+                    }
+                    this._applyStyles(marker, true);
+                }
+            }
+
+            for (i = 0; i &lt; markersNoCluster.length; i++) {
+                marker = markersNoCluster[i];
+                if (this.noClusterGroup) {
+                    if (this._slidermove) {
+                        marker._slidermove = true;
+                    }
+                    this._applyStyles(marker, false);
+                }
+
+            }
+        }
+
+
+
+    });</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeControl.html">LayerTreeControl</a></li><li><a href="SMC.controls.layerTree.LayerTreeLeaf.html">LayerTreeLeaf</a></li><li><a href="SMC.controls.layerTree.LayerTreeNode.html">LayerTreeNode</a></li><li><a href="SMC.layers.aggregation.AggregatingLayer.html">AggregatingLayer</a></li><li><a href="SMC.layers.aggregation.MultiModeLayer.html">MultiModeLayer</a></li><li><a href="SMC.layers.EditableLayer.html">EditableLayer</a></li><li><a href="SMC.layers.Folder.html">Folder</a></li><li><a href="SMC.layers.geometry.CanvasRenderer.html">CanvasRenderer</a></li><li><a href="SMC.layers.geometry.GeometryLayer.html">GeometryLayer</a></li><li><a href="SMC.layers.geometry.TiledGeometryLayer.html">TiledGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSGeometryLayer.html">WFSGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html">WFSTiledGeometryLayer</a></li><li><a href="SMC.layers.history.AggregatingHistoryLayer.html">AggregatingHistoryLayer</a></li><li><a href="SMC.layers.history.DataHistoryLayer.html">DataHistoryLayer</a></li><li><a href="SMC.layers.Layer.html">Layer</a></li><li><a href="SMC.layers.markers.AtmosphereRTMarkerLayer.html">AtmosphereRTMarkerLayer</a></li><li><a href="SMC.layers.markers.MarkerLayer.html">MarkerLayer</a></li><li><a href="SMC.layers.markers.WFSMarkerLayer.html">WFSMarkerLayer</a></li><li><a href="SMC.layers.markers.WFSTMarkerLayer.html">WFSTMarkerLayer</a></li><li><a href="SMC.layers.reloaders.LayerReloader.html">LayerReloader</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html">ReloadTrigger</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html">TimerReloadTrigger</a></li><li><a href="SMC.layers.stylers.Styler.html">Styler</a></li><li><a href="SMC.layers.TileLayer.html">TileLayer</a></li><li><a href="SMC.layers.WMSLayer.html">WMSLayer</a></li><li><a href="SMC.Map.html">Map</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html">AtmosphereRTFeatureProvider</a></li><li><a href="SMC.providers.FeatureHistory.html">FeatureHistory</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html">FeatureHistoryProvider</a></li><li><a href="SMC.providers.FeaturesProvider.html">FeaturesProvider</a></li><li><a href="SMC.providers.RTFeatureProvider.html">RTFeatureProvider</a></li><li><a href="SMC.providers.URLFeatureProvider.html">URLFeatureProvider</a></li><li><a href="SMC.providers.WFSProvider.html">WFSProvider</a></li><li><a href="SMC.providers.WFSTProvider.html">WFSTProvider</a></li></ul><h3>Events</h3><ul><li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html#event:featureHistoryLoaded">featureHistoryLoaded</a></li><li><a href="SMC.providers.FeaturesProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.RTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.URLFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSTProvider.html#event:featuresLoaded">featuresLoaded</a></li></ul><h3>Namespaces</h3><ul><li><a href="SMC.html">SMC</a></li><li><a href="SMC.controls.html">controls</a></li><li><a href="SMC.controls.layerTree.html">layerTree</a></li><li><a href="SMC.layers.html">layers</a></li><li><a href="SMC.layers.aggregation.html">aggregation</a></li><li><a href="SMC.layers.geometry.html">geometry</a></li><li><a href="SMC.layers.history.html">history</a></li><li><a href="SMC.layers.markers.html">markers</a></li><li><a href="SMC.layers.reloaders.html">reloaders</a></li><li><a href="SMC.layers.stylers.html">stylers</a></li><li><a href="SMC.providers.html">providers</a></li></ul><h3>Mixins</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeFolder.html">LayerTreeFolder</a></li><li><a href="SMC.LayerLoader.html">LayerLoader</a></li><li><a href="SMC.layers.SingleLayer.html">SingleLayer</a></li><li><a href="SMC.layers.stylers.MapCssStyler.html">MapCssStyler</a></li><li><a href="SMC.layers.stylers.MarkerCssStyler.html">MarkerCssStyler</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Mustache">Mustache</a></li><li><a href="global.html#paper">paper</a></li><li><a href="global.html#PEG">PEG</a></li><li><a href="global.html#rbush">rbush</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha8</a> on Wed Jul 30 2014 10:34:07 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

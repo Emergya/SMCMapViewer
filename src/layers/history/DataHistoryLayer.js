@@ -25,7 +25,10 @@ SMC.layers.history.DataHistoryLayer = SMC.layers.SingleLayer.extend(
 
 		},
 
-
+		/**
+         * Method to create an HTML node for the name of the layer.
+         * @returns {String} HTML code representing the code to be added to the layer's entry in the layer tree.
+         */
 		createNodeHTML: function() {
 			this._historyLayers = this.orderLayers();
 			var layers = this._historyLayers;
@@ -135,11 +138,18 @@ SMC.layers.history.DataHistoryLayer = SMC.layers.SingleLayer.extend(
 
 		},
 
-
+		/**
+         * Method to add the layer in the map
+         * @param {SMC.Map} map - Map to be added
+         */
 		addTo: function(map) {
 			SMC.layers.aggregation.AggregatingLayer.prototype.addTo.call(this, map);
 		},
 
+		/**
+         * Method to get the map
+         * @returns {SMC.Map} map - Map layer
+         */
 		getMap: function() {
 			SMC.layers.aggregation.AggregatingLayer.prototype.getMap.call(this, arguments);
 			return map;
@@ -273,6 +283,10 @@ SMC.layers.history.DataHistoryLayer = SMC.layers.SingleLayer.extend(
 			}
 		},
 
+		/**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be removed
+         */
 		onRemove: function(map) {
 			var data = this._historyLayers;
 			for (var d in data) {
@@ -286,6 +300,10 @@ SMC.layers.history.DataHistoryLayer = SMC.layers.SingleLayer.extend(
 
 		},
 
+		/**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be added
+         */
 		onAdd: function(map) {
 			SMC.layers.aggregation.AggregatingLayer.prototype.addTo.call(this, map);
 			var value;

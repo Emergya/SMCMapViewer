@@ -36,7 +36,7 @@ SMC.layers.markers.AtmosphereRTMarkerLayer = SMC.layers.markers.MarkerLayer.exte
         },
 
         /**
-         * Method to remove tje features from the map
+         * Method to remove the features from the map
          * @param {object} features - features to be deleted
          */
         onFeaturesDeleted: function(features) {

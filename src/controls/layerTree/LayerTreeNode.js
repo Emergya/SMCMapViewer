@@ -36,7 +36,7 @@ SMC.controls.layerTree.LayerTreeNode = L.Class.extend(
 
         /**
          * Method to know if a layer is visible
-         * @returns {Boolean} True is the layer is visible
+         * @returns {Boolean} True if the layer is visible
          */
         isVisible: function() {
             return visible;

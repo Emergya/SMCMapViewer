@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controls/layerTree/LayerTreeControl.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controls/layerTree/LayerTreeControl.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>require("./layerTree.js");
+/**
+ * Base class for layer tree controls.
+ * @class
+ * @extends L.Control
+ * @param {SMC.controls.layerTree.LayerTreeControl~options} options - The configuration for the class
+ *
+ * @author Moisés Arcos (marcos@emergya.com)
+ */
+SMC.controls.layerTree.LayerTreeControl = L.Control.extend(
+    /** @lends SMC.controls.layerTree.LayerTreeControl# */
+    {
+        /**
+         * @typedef {Object} SMC.controls.layerTree.LayerTreeControl~options
+         * @property {boolean} collapsed=true - Default collapsed value
+         * @property {string} position='topright' - Default position value
+         * @property {boolean} autoZIndex=true - Default autoZIndex value
+         */
+        options: {
+            collapsed: true,
+            position: 'topright',
+            autoZIndex: true
+        },
+        /**
+         * Initialize the object with the params
+         * @param {SMC.layers} baseLayers - Layers as a base layers
+         * @param {Object} options - Object with extra information
+         */
+        initialize: function(baseLayers, options) {
+            L.Util.setOptions(this, options);
+
+            this._layers = {};
+            this._parents = {};
+            this._lastZIndex = 0;
+            this._handlingClick = false;
+            this._groupList = [];
+            this._domGroups = [];
+
+            for (var i in baseLayers) {
+                this._addLayer(baseLayers[i], i);
+            }
+
+        },
+
+        /**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be added
+         */
+        onAdd: function(map) {
+            this._initLayout();
+            this._update();
+
+            map
+                .on('layeradd', this._onLayerChange, this)
+                .on('layerremove', this._onLayerChange, this);
+
+
+            return this._container;
+        },
+
+        /**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be added
+         */
+        onRemove: function(map) {
+            map
+                .off('layeradd', this._onLayerChange)
+                .off('layerremove', this._onLayerChange);
+        },
+
+        /**
+         * Method to add layer as a base layer
+         * @param {SMC.layers} layer - Layer to be added
+         * @param {String} name - Layer name
+         */
+        addBaseLayer: function(layer, name) {
+            this._addLayer(layer, name);
+            this._update();
+            return this;
+        },
+
+        /**
+         * Method to add layer as an overlay layer
+         * @function
+         * @param {SMC.layers} layer - Layer to be added
+         */
+        addOverlay: function(layer) {
+            this._methodRecursive(layer);
+            this._update();
+            return this;
+        },
+
+        /**
+         * Method to remove a layer from the map
+         * @param {SMC.layers} layer - Layer to be removed
+         */
+        removeLayer: function(layer) {
+            var id = L.Util.stamp(layer);
+            delete this._layers[id];
+            this._update();
+            return this;
+        },
+
+        _initLayout: function() {
+            var className = 'leaflet-control-layers',
+                container = this._container = L.DomUtil.create('div', className);
+
+            //Makes this work on IE10 Touch devices by stopping it from firing a mouseout event when the touch is released
+            container.setAttribute('aria-haspopup', true);
+
+            if (!L.Browser.touch) {
+                L.DomEvent.disableClickPropagation(container);
+                L.DomEvent.on(container, 'wheel', L.DomEvent.stopPropagation);
+            } else {
+                L.DomEvent.on(container, 'click', L.DomEvent.stopPropagation);
+            }
+
+            var form = this._form = L.DomUtil.create('form', className + '-list');
+
+            if (this.options.collapsed) {
+                if (!L.Browser.android) {
+                    L.DomEvent
+                        .on(container, 'mouseover', this._expand, this)
+                        .on(container, 'mouseout', this._collapse, this);
+                }
+                var link = this._layersLink = L.DomUtil.create('a', className + '-toggle', container);
+                link.href = '#';
+                link.title = 'Layers';
+
+                if (L.Browser.touch) {
+                    L.DomEvent
+                        .on(link, 'click', L.DomEvent.stop)
+                        .on(link, 'click', this._expand, this);
+                } else {
+                    L.DomEvent.on(link, 'focus', this._expand, this);
+                }
+
+                this._map.on('click', this._collapse, this);
+                // TODO keyboard accessibility
+            } else {
+                this._expand();
+            }
+
+            this._baseLayersList = L.DomUtil.create('div', className + '-base', form);
+            this._separator = L.DomUtil.create('div', className + '-separator', form);
+            this._overlaysList = L.DomUtil.create('div', className + '-overlays', form);
+
+            container.appendChild(form);
+        },
+
+        _addLayer: function(layer, name) {
+            var id = L.Util.stamp(layer);
+
+            this._layers[id] = {
+                layer: layer,
+                name: name,
+                overlay: false
+            };
+
+            if (this.options.autoZIndex &amp;&amp; layer.setZIndex) {
+                this._lastZIndex++;
+                layer.setZIndex(this._lastZIndex);
+            }
+        },
+
+        _update: function() {
+            if (!this._container) {
+                return;
+            }
+
+            this._baseLayersList.innerHTML = '';
+            this._overlaysList.innerHTML = '';
+            this._domGroups.length = 0;
+
+            var baseLayersPresent = false,
+                overlaysPresent = false,
+                i, obj;
+
+            for (i in this._layers) {
+                obj = this._layers[i];
+                this._addItem(obj);
+                overlaysPresent = overlaysPresent || obj.overlay;
+                baseLayersPresent = baseLayersPresent || !obj.overlay;
+            }
+
+            this._separator.style.display = overlaysPresent &amp;&amp; baseLayersPresent ? '' : 'none';
+        },
+
+        _methodRecursive: function(layer) {
+            var id = L.Util.stamp(layer);
+            var name = "";
+            if (layer.createNodeHTML) {
+                name = layer.createNodeHTML();
+            } else {
+                name = layer.options.label;
+            }
+            if (!this._layers[id]) {
+                var element = {
+                    name: name,
+                    layer: layer,
+                    overlay: true,
+                    parent: null
+                };
+                if (layer.loadLayers) {
+                    this._parents[id] = element;
+                } else {
+                    this._layers[id] = element;
+                }
+
+                if (layer.parent) {
+                    element.parent = L.Util.stamp(layer.parent);
+                    this._methodRecursive(layer.parent);
+                } else if (layer.options.parent) {
+                    element.parent = layer.options.parent;
+                    this._methodRecursive(this._parents[element.parent].layer);
+                }
+
+            }
+            if (this.options.autoZIndex &amp;&amp; layer.setZIndex) {
+                this._lastZIndex++;
+                layer.setZIndex(this._lastZIndex);
+            }
+        },
+
+        _onLayerChange: function(e) {
+            if (e.layer instanceof L.MarkerClusterGroup) {
+                e.layer.off('clustermouseover', e.layer._showCoverage);
+            }
+
+            if (e.layer instanceof L.Marker &amp;&amp; e.layer.__parent) {
+                return;
+            }
+
+            if (e.layer._slidermove) {
+                return;
+            }
+
+
+            if (e.layer instanceof L.Popup) {
+                return;
+            }
+            var obj = this._layers[L.Util.stamp(e.layer)];
+
+            if (e.layer._map) {
+                if (!obj) {
+                    if (e.layer.options &amp;&amp; e.layer.options.label) {
+                        this._methodRecursive(e.layer);
+                        this._update();
+                    }
+                } else {
+                    var type = obj.overlay ?
+                        (e.type === 'layeradd' ? 'overlayadd' : 'overlayremove') :
+                        (e.type === 'layeradd' ? 'baselayerchange' : null);
+                    if (type) {
+                        this._map.fire(type, obj);
+                    }
+                }
+
+                if (!this._handlingClick) {
+                    this._update();
+                }
+            } else {
+                if (!this._handlingClick) {
+                    delete this._layers[L.Util.stamp(e.layer)];
+                    this._update();
+                }
+            }
+        },
+
+        // IE7 bugs out if you create a radio dynamically, so you have to do it this hacky way (see http://bit.ly/PqYLBe)
+        _createRadioElement: function(name, checked) {
+
+            var radioHtml = '&lt;input type="radio" class="leaflet-control-layers-selector" name="' + name + '"';
+            if (checked) {
+                radioHtml += ' checked="checked"';
+            }
+            radioHtml += '/>';
+
+            var radioFragment = document.createElement('div');
+            radioFragment.innerHTML = radioHtml;
+
+            return radioFragment.firstChild;
+        },
+
+        _getLabel: function(obj) {
+            var label = document.createElement('label'),
+                input,
+                checked = this._map.hasLayer(obj.layer);
+
+            if (obj.overlay) {
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                input.className = 'leaflet-control-layers-selector';
+                input.id = obj.layer._leaflet_id;
+                input.defaultChecked = checked;
+            } else {
+                input = this._createRadioElement('leaflet-base-layers', checked);
+            }
+
+            input.layerId = L.Util.stamp(obj.layer);
+
+            L.DomEvent.on(input, 'click', this._onInputClick, this);
+
+            var name = document.createElement('span');
+            //name.innerHTML = ' ' + obj.name;
+            if(typeof obj.name == 'string'){
+                name.innerHTML = ' ' + obj.name;
+            }else{
+                name.appendChild(obj.name);
+            }
+
+            label.appendChild(input);
+            label.appendChild(name);
+
+            return label;
+        },
+
+        _getGroupContainer: function(obj) {
+            var groupContainer = document.createElement('div');
+            groupContainer.className = 'leaflet-control-layers-group';
+            groupContainer.id = 'leaflet-control-layers-group-' + L.Util.stamp(obj.layer);
+            // Create span folder title
+            var groupLabel = this._getGroupLabel(obj);
+            // Add folder label to group container
+            groupContainer.appendChild(groupLabel);
+
+            return groupContainer;
+        },
+
+        _getGroupLabel: function(obj) {
+            var groupLabel = document.createElement('span');
+            groupLabel.className = 'leaflet-control-layers-group-name';
+            groupLabel.appendChild(obj.name);
+
+            return groupLabel;
+        },
+
+        _getGroupContent: function(obj) {
+            var groupContent = document.createElement('div');
+            groupContent.className = 'leaflet-control-layers-group-content';
+            if (obj.name.className.indexOf("open") == -1) {
+                groupContent.style.display = 'none';
+            }
+
+            return groupContent;
+        },
+
+        _addItemRecursively: function(obj) {
+            if (obj.parent) {
+                var parent = this._parents[obj.parent];
+                this._addItemRecursively(parent);
+                if (obj.layer.loadedLayers) {
+                    var folderId = L.Util.stamp(obj.layer);
+                    if (!this._domGroups[folderId]) {
+                        var parentDom = this._getParentDom(obj.parent);
+                        var parentContent = parentDom.getElementsByClassName("leaflet-control-layers-group-content")[0];
+                        this._addFolderToOverlays(obj, parentContent);
+                    }
+                } else {
+                    // It's a layer
+                    this._addLayerToOverlays(obj);
+                }
+            } else {
+                if (obj.layer.loadedLayers) {
+                    // It's a folder
+                    var folderId = L.Util.stamp(obj.layer);
+                    if (!this._domGroups[folderId]) {
+                        this._addFolderToOverlays(obj);
+                    }
+                } else {
+                    // It's a layer
+                    this._addLayerToOverlays(obj);
+                }
+            }
+        },
+
+        _addFolderToOverlays: function(obj, parent) {
+            // Create group container div
+            var groupContainer = this._getGroupContainer(obj);
+            // Create group content div
+            groupContent = this._getGroupContent(obj);
+            // Add group content to group container
+            groupContainer.appendChild(groupContent);
+            // Add group container to container
+            if (parent) {
+                parent.appendChild(groupContainer);
+            } else {
+                container.appendChild(groupContainer);
+            }
+            // Add group container to domGroups
+            this._domGroups[L.Util.stamp(obj.layer)] = groupContainer;
+        },
+
+        _getParentDom: function(id) {
+            var parent = null;
+            for (el in this._domGroups) {
+                var groupId = this._domGroups[el].id.split("-")[4];
+                if (groupId == id) {
+                    parent = this._domGroups[el];
+                }
+            }
+            return parent;
+        },
+
+        _addLayerToOverlays: function(obj) {
+            var label = this._getLabel(obj);
+            if (obj.parent) {
+                var parent = this._getParentDom(obj.parent);
+                var parentContent = parent.getElementsByClassName("leaflet-control-layers-group-content")[0];
+                parentContent.appendChild(label);
+            } else {
+                container.appendChild(label);
+            }
+        },
+
+        _addItem: function(obj) {
+            var label = this._getLabel(obj);
+            if (obj.overlay) {
+                container = this._overlaysList;
+                this._addItemRecursively(obj);
+            } else {
+                container = this._baseLayersList;
+                container.appendChild(label);
+            }
+
+            return label;
+        },
+
+        _onInputClick: function() {
+            var i, input, obj,
+                inputs = $('input[type=checkbox]', this._from),
+                inputsLen = inputs.length;
+
+            this._handlingClick = true;
+
+            for (i = 0; i &lt; inputsLen; i++) {
+                input = inputs[i];
+                obj = this._layers[input.layerId];
+                var buttons = $("input[type=button]", obj.name);
+
+                if (input.checked &amp;&amp; !this._map.hasLayer(obj.layer)) {
+                    this._map.addLayer(obj.layer);
+                    // Enable the buttons
+                    for(i=0; i&lt;buttons.length; i++){
+                        if(buttons[i].disabled){
+                            buttons[i].disabled = false;
+                        }
+                    }
+                } else if (!input.checked &amp;&amp; this._map.hasLayer(obj.layer)) {
+                    this._map.removeLayer(obj.layer);
+                    // Disable the buttons
+                    for(i=0; i&lt;buttons.length; i++){
+                        if(!buttons[i].disabled){
+                            buttons[i].disabled = true;
+                        }
+                    }
+                }
+            }
+            this._handlingClick = false;
+        },
+
+        _expand: function() {
+            L.DomUtil.addClass(this._container, 'leaflet-control-layers-expanded');
+        },
+
+        _collapse: function() {
+            this._container.className = this._container.className.replace(' leaflet-control-layers-expanded', '');
+        }
+    }
+);
+/**
+ * API factory method for ease creation of LayerTreeControl.
+ * @param {Object} baseLayer - Javascript object with base layer name and its layer
+ * @param {Object} overlays - Javascript object with overalys layer name ans its layer
+ * @param {Object} options - Javascript object with the options params
+ */
+SMC.layerTreeControl = function(baseLayers, overlays, options) {
+    return new SMC.controls.layerTree.LayerTreeControl(baseLayers, overlays, options);
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeControl.html">LayerTreeControl</a></li><li><a href="SMC.controls.layerTree.LayerTreeLeaf.html">LayerTreeLeaf</a></li><li><a href="SMC.controls.layerTree.LayerTreeNode.html">LayerTreeNode</a></li><li><a href="SMC.layers.aggregation.AggregatingLayer.html">AggregatingLayer</a></li><li><a href="SMC.layers.aggregation.MultiModeLayer.html">MultiModeLayer</a></li><li><a href="SMC.layers.EditableLayer.html">EditableLayer</a></li><li><a href="SMC.layers.Folder.html">Folder</a></li><li><a href="SMC.layers.geometry.CanvasRenderer.html">CanvasRenderer</a></li><li><a href="SMC.layers.geometry.GeometryLayer.html">GeometryLayer</a></li><li><a href="SMC.layers.geometry.TiledGeometryLayer.html">TiledGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSGeometryLayer.html">WFSGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html">WFSTiledGeometryLayer</a></li><li><a href="SMC.layers.history.AggregatingHistoryLayer.html">AggregatingHistoryLayer</a></li><li><a href="SMC.layers.history.DataHistoryLayer.html">DataHistoryLayer</a></li><li><a href="SMC.layers.Layer.html">Layer</a></li><li><a href="SMC.layers.markers.AtmosphereRTMarkerLayer.html">AtmosphereRTMarkerLayer</a></li><li><a href="SMC.layers.markers.MarkerLayer.html">MarkerLayer</a></li><li><a href="SMC.layers.markers.WFSMarkerLayer.html">WFSMarkerLayer</a></li><li><a href="SMC.layers.markers.WFSTMarkerLayer.html">WFSTMarkerLayer</a></li><li><a href="SMC.layers.reloaders.LayerReloader.html">LayerReloader</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html">ReloadTrigger</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html">TimerReloadTrigger</a></li><li><a href="SMC.layers.stylers.Styler.html">Styler</a></li><li><a href="SMC.layers.TileLayer.html">TileLayer</a></li><li><a href="SMC.layers.WMSLayer.html">WMSLayer</a></li><li><a href="SMC.Map.html">Map</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html">AtmosphereRTFeatureProvider</a></li><li><a href="SMC.providers.FeatureHistory.html">FeatureHistory</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html">FeatureHistoryProvider</a></li><li><a href="SMC.providers.FeaturesProvider.html">FeaturesProvider</a></li><li><a href="SMC.providers.RTFeatureProvider.html">RTFeatureProvider</a></li><li><a href="SMC.providers.URLFeatureProvider.html">URLFeatureProvider</a></li><li><a href="SMC.providers.WFSProvider.html">WFSProvider</a></li><li><a href="SMC.providers.WFSTProvider.html">WFSTProvider</a></li></ul><h3>Events</h3><ul><li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html#event:featureHistoryLoaded">featureHistoryLoaded</a></li><li><a href="SMC.providers.FeaturesProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.RTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.URLFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSTProvider.html#event:featuresLoaded">featuresLoaded</a></li></ul><h3>Namespaces</h3><ul><li><a href="SMC.html">SMC</a></li><li><a href="SMC.controls.html">controls</a></li><li><a href="SMC.controls.layerTree.html">layerTree</a></li><li><a href="SMC.layers.html">layers</a></li><li><a href="SMC.layers.aggregation.html">aggregation</a></li><li><a href="SMC.layers.geometry.html">geometry</a></li><li><a href="SMC.layers.history.html">history</a></li><li><a href="SMC.layers.markers.html">markers</a></li><li><a href="SMC.layers.reloaders.html">reloaders</a></li><li><a href="SMC.layers.stylers.html">stylers</a></li><li><a href="SMC.providers.html">providers</a></li></ul><h3>Mixins</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeFolder.html">LayerTreeFolder</a></li><li><a href="SMC.LayerLoader.html">LayerLoader</a></li><li><a href="SMC.layers.SingleLayer.html">SingleLayer</a></li><li><a href="SMC.layers.stylers.MapCssStyler.html">MapCssStyler</a></li><li><a href="SMC.layers.stylers.MarkerCssStyler.html">MarkerCssStyler</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Mustache">Mustache</a></li><li><a href="global.html#paper">paper</a></li><li><a href="global.html#PEG">PEG</a></li><li><a href="global.html#rbush">rbush</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha8</a> on Wed Jul 30 2014 10:34:07 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

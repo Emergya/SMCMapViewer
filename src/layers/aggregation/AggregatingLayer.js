@@ -42,6 +42,10 @@ SMC.layers.aggregation.AggregatingLayer = L.LayerGroup.extend(
 
 		},
 
+		/**
+		 * Method to get the map
+		 * @returns {SMC.Map} map - Map layer
+		 */
 		getMap: function() {
 			if (this.parent) {
 				if (this.parent.map) {

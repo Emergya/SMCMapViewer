@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: layers/stylers/MarkerCssStyler.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: layers/stylers/MarkerCssStyler.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>require("./Styler.js");
+require("../../../lib/LeafletHtmlIcon.js");
+var Mustache = require("../../../lib/mustache.js/mustache.js");
+/**
+ * Parser of MarkerCSS, for user with SMC Viewer's marker layers.
+ *
+ * @class
+ * @extends SMC.layers.stylers.Styler
+ * @mixin SMC.layers.stylers.MarkerCssStyler
+ *
+ * @author Luis Román (lroman@emergya.com)
+ */
+SMC.layers.stylers.MarkerCssStyler = SMC.layers.stylers.Styler.extend(
+    /** @lends SMC.layers.stylers.MarkerCssStyler# */
+    {
+        /**
+         * Initialize the object with the params
+         * @param {object} options - default options
+         */
+        initialize: function(options) {
+            this._parser_url = SMC.BASE_URL + "resources/parser.txt";
+            SMC.layers.stylers.Styler.prototype.initialize.apply(this, arguments);
+        },
+
+        /**
+         * Adds style properties to the received features, so the can be represented as intended by the style for the layer.
+         * @param {object} feature - An object that represents the geometry element being styled.
+         * @param {string} zoom - Number that represents the level zoom to apply the style.
+         */
+        applyStyle: function(feature, zoom) {
+            var properties = feature.properties;
+            var style = this._createStyles(feature, zoom);
+            if (!style) {
+                style = "";
+            }
+
+            feature._style = style;
+
+
+            var icon, width, height, anchorLeft, anchorTop;
+
+            width = style.markerWidth || 0;
+            height = style.markerHeight || 0;
+
+            anchorLeft = style.anchorLeft || 0;
+            anchorTop = style.anchorTop || 0;
+
+            var disableClustering = !!style.disableClustering;
+            var opacity = style.opacity ? style.opacity : 1;
+            //var visible = !style.invisible ? true : false;
+            // var visible;
+            // if(style.invisible == 'false'){
+            //     visible = true;
+            // }else
+            // visible = false;
+
+            if (style.iconUrl) {
+                // Load normal marker icon with the specified url.
+
+
+                icon = new L.icon({
+                    iconUrl: style.iconUrl,
+                    iconSize: [width, height],
+                    iconAnchor: [anchorLeft, anchorTop]
+                });
+
+            } else if (style.templateUrl) {
+                // Load the given page from its url in an iframe.
+
+                icon = new L.HtmlIcon({
+                    //html: "&lt;iframe src=" + style.templateUrl + ' style=" border: none;width:' + width + 'px;height:' + height + 'px;margin-top:-' + anchorTop + 'px;margin-left:-' + anchorLeft + 'px">&lt;/iframe>',
+                    html: this._createHTMLElement("iframe", {
+                        "src": style.templateUrl
+                    }, {
+                        "border": "none",
+                        "width": {
+                            value: width,
+                            units: "px"
+                        },
+                        "height": {
+                            value: height,
+                            units: "px",
+                        },
+                        "margin-top": {
+                            value: "-" + anchorTop,
+                            units: "px"
+                        },
+                        "margin-left": {
+                            value: "-" + anchorLeft,
+                            units: "px"
+                        }
+                    })
+                });
+
+
+            } else if (style.htmlTemplate) {
+                // Load the template into the marker.
+                // TODO: "inflate the template" using mustache.
+                var data = {};
+                for (var propKey in properties) {
+                    data[propKey] = properties[propKey];
+                }
+
+
+                var output = Mustache.render(style.htmlTemplate, data);
+
+
+                //var container = '&lt;div style=" width:' + width + 'px;height:' + height + 'px;margin-top:-' + anchorTop + 'px;margin-left:-' + anchorLeft + 'px">' + output + "&lt;/div>";
+
+                icon = new L.HtmlIcon({
+                    html: this._createHTMLElement("div", {
+
+                    }, {
+                        "width": {
+                            value: width,
+                            units: "px"
+                        },
+                        "height": {
+                            value: height,
+                            units: "px",
+                        },
+                        "margin-top": {
+                            value: "-" + anchorTop,
+                            units: "px"
+                        },
+                        "margin-left": {
+                            value: "-" + anchorLeft,
+                            units: "px"
+                        }
+                    }, output),
+
+                });
+
+            } else if (style.iconClassName) {
+
+                icon = new L.HtmlIcon({
+                    //html: '&lt;div class="'+style.iconClassName+'" style=" border: none;width:' + width + 'px;height:' + height + 'px;margin-top:-' + anchorTop + 'px;margin-left:-' + anchorLeft + 'px">&lt;/div>',
+                    html: this._createHTMLElement("div", {
+                        "class": style.iconClassName
+                    }, {
+                        "border": "none",
+                        "width": {
+                            value: width,
+                            units: "px"
+                        },
+                        "height": {
+                            value: height,
+                            units: "px",
+                        },
+                        "margin-top": {
+                            value: anchorTop,
+                            units: "px"
+                        },
+                        "margin-left": {
+                            value: anchorLeft,
+                            units: "px"
+                        }
+                    }),
+
+                });
+            } else {
+                icon = new L.icon({
+                    iconUrl: L.Icon.Default.imagePath + "/marker-icon.png",
+                    iconAnchor: [13, 41]
+                });
+            }
+
+            return {
+                icon: icon,
+                disableClustering: disableClustering,
+                opacity: opacity
+            };
+
+        },
+
+        _createHTMLElement: function(elementType, attributes, styles, content) {
+
+            if (!content) {
+                content = "";
+            }
+
+            var attributesString = "";
+            for (var attrKey in attributes) {
+                attributesString += attrKey + '="' + attributes[attrKey] + '"';
+            }
+
+            var stylesString = "";
+            for (var styleKey in styles) {
+                var style = styles[styleKey];
+                if (!style) {
+                    continue;
+                } else if (typeof style == "object") {
+                    if (style.value) {
+                        stylesString += styleKey + ":" + style.value;
+                        if (style.units) {
+                            stylesString += style.units;
+                        }
+                        stylesString += ";";
+                    }
+                } else {
+                    stylesString += styleKey + ":" + style;
+                    stylesString += ";";
+                }
+
+            }
+
+
+            return "&lt;" + elementType + " " + attributesString + " style=\"position:absolute;" + stylesString + "\">" + content + "&lt;/" + elementType + ">";
+        },
+
+        /**
+         * Adds style popup to the received features, so the can be represented as intended by the style for the layer.
+         * @param {object} marker - An object that represents the geometry element being styled.
+         * @param {string} zoom - Number that represents the level zoom to apply the style.
+         */
+        addPopUp: function(marker, zoom) {
+
+            if (marker.popup) {
+                marker.unbindPopup();
+            }
+            var style = null;
+            if(marker.feature &amp;&amp; marker.feature._style){
+                style = marker.feature._style;
+            }else{
+                style = "";
+            }
+            var offsetLeft = style.popUpOffsetLeft || 0;
+            var offsetTop = style.popUpOffsetTop || 0;
+
+
+            var content, propKey;
+            var data = {};
+            if (style.popUpTemplate) {
+
+
+                content = this._contentFromTemplate(marker.feature, style.popUpTemplate);
+
+            } else if (style.popUpUrl) {
+                content = "&lt;iframe src=" + style.popUpUrl + "/>";
+
+            } else if (style.noPopUp) {
+                marker.unbindPopup();
+
+            } else {
+                // Default template, one entry per field;
+                content = this._contentFromTemplate(marker.feature, "");
+            }
+            var offset = [offsetLeft, offsetTop];
+            if (content) {
+                marker.bindPopup(content, {
+                    offset: offset
+                });
+            }
+        }
+    });
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeControl.html">LayerTreeControl</a></li><li><a href="SMC.controls.layerTree.LayerTreeLeaf.html">LayerTreeLeaf</a></li><li><a href="SMC.controls.layerTree.LayerTreeNode.html">LayerTreeNode</a></li><li><a href="SMC.layers.aggregation.AggregatingLayer.html">AggregatingLayer</a></li><li><a href="SMC.layers.aggregation.MultiModeLayer.html">MultiModeLayer</a></li><li><a href="SMC.layers.EditableLayer.html">EditableLayer</a></li><li><a href="SMC.layers.Folder.html">Folder</a></li><li><a href="SMC.layers.geometry.CanvasRenderer.html">CanvasRenderer</a></li><li><a href="SMC.layers.geometry.GeometryLayer.html">GeometryLayer</a></li><li><a href="SMC.layers.geometry.TiledGeometryLayer.html">TiledGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSGeometryLayer.html">WFSGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html">WFSTiledGeometryLayer</a></li><li><a href="SMC.layers.history.AggregatingHistoryLayer.html">AggregatingHistoryLayer</a></li><li><a href="SMC.layers.history.DataHistoryLayer.html">DataHistoryLayer</a></li><li><a href="SMC.layers.Layer.html">Layer</a></li><li><a href="SMC.layers.markers.AtmosphereRTMarkerLayer.html">AtmosphereRTMarkerLayer</a></li><li><a href="SMC.layers.markers.MarkerLayer.html">MarkerLayer</a></li><li><a href="SMC.layers.markers.WFSMarkerLayer.html">WFSMarkerLayer</a></li><li><a href="SMC.layers.markers.WFSTMarkerLayer.html">WFSTMarkerLayer</a></li><li><a href="SMC.layers.reloaders.LayerReloader.html">LayerReloader</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html">ReloadTrigger</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html">TimerReloadTrigger</a></li><li><a href="SMC.layers.stylers.Styler.html">Styler</a></li><li><a href="SMC.layers.TileLayer.html">TileLayer</a></li><li><a href="SMC.layers.WMSLayer.html">WMSLayer</a></li><li><a href="SMC.Map.html">Map</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html">AtmosphereRTFeatureProvider</a></li><li><a href="SMC.providers.FeatureHistory.html">FeatureHistory</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html">FeatureHistoryProvider</a></li><li><a href="SMC.providers.FeaturesProvider.html">FeaturesProvider</a></li><li><a href="SMC.providers.RTFeatureProvider.html">RTFeatureProvider</a></li><li><a href="SMC.providers.URLFeatureProvider.html">URLFeatureProvider</a></li><li><a href="SMC.providers.WFSProvider.html">WFSProvider</a></li><li><a href="SMC.providers.WFSTProvider.html">WFSTProvider</a></li></ul><h3>Events</h3><ul><li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html#event:featureHistoryLoaded">featureHistoryLoaded</a></li><li><a href="SMC.providers.FeaturesProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.RTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.URLFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSTProvider.html#event:featuresLoaded">featuresLoaded</a></li></ul><h3>Namespaces</h3><ul><li><a href="SMC.html">SMC</a></li><li><a href="SMC.controls.html">controls</a></li><li><a href="SMC.controls.layerTree.html">layerTree</a></li><li><a href="SMC.layers.html">layers</a></li><li><a href="SMC.layers.aggregation.html">aggregation</a></li><li><a href="SMC.layers.geometry.html">geometry</a></li><li><a href="SMC.layers.history.html">history</a></li><li><a href="SMC.layers.markers.html">markers</a></li><li><a href="SMC.layers.reloaders.html">reloaders</a></li><li><a href="SMC.layers.stylers.html">stylers</a></li><li><a href="SMC.providers.html">providers</a></li></ul><h3>Mixins</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeFolder.html">LayerTreeFolder</a></li><li><a href="SMC.LayerLoader.html">LayerLoader</a></li><li><a href="SMC.layers.SingleLayer.html">SingleLayer</a></li><li><a href="SMC.layers.stylers.MapCssStyler.html">MapCssStyler</a></li><li><a href="SMC.layers.stylers.MarkerCssStyler.html">MarkerCssStyler</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Mustache">Mustache</a></li><li><a href="global.html#paper">paper</a></li><li><a href="global.html#PEG">PEG</a></li><li><a href="global.html#rbush">rbush</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha8</a> on Wed Jul 30 2014 10:34:07 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

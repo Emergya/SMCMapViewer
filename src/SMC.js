@@ -10,7 +10,7 @@ SMC = {
 	/**
      * Base url where resources are
      * @property {string} BASE_URL - The default url value.
-     * @default ../dist/
+     * @default ../../dist/
      */
 	BASE_URL: "../../dist/"
 };

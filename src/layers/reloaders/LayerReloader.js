@@ -33,7 +33,7 @@ SMC.layers.reloaders.LayerReloader = L.Class.extend(
         },
 
         /**
-         * Load a layer's data
+         * Unload a layer's data
          * @abstract
          */
         unload: function() {
@@ -42,7 +42,7 @@ SMC.layers.reloaders.LayerReloader = L.Class.extend(
 
         /**
          * Method to reload the trigger
-         * @param {object} tigger - trigger to reliad the control
+         * @param {object} trigger - trigger to reliad the control
          */
         addReloadTrigger: function(trigger) {
             if (typeof trigger.type !== "undefined") {

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: layers/geometry/TiledGeometryLayer.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: layers/geometry/TiledGeometryLayer.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>require("./geometry.js");
+require("../layers.js");
+require("../SingleLayer.js");
+require("./CanvasRenderer.js");
+require("../stylers/MapCssStyler.js");
+require("../../../lib/canvasLayer/leaflet_canvas_layer.js");
+// RBush inserts itself as NodeJs module so we must retrieve it this way.
+/**
+ * Global variable that represents RBush library functionality
+ * @property {rbush} - rbush variable
+ */
+var rbush = require("../../../lib/rbush.js");
+/**
+ * Base class for layers using client side rendering of tiles containing geographical features in the SCM map viewer component.
+ *
+ * The tiles contents will be retrieved using a data provided supporting tiling as needed to cover the viewing area.
+ *
+ * @class
+ * @abstract
+ * @extends L.TileLayer.Canvas
+ * @mixes SMC.layers.SingleLayer
+ * @mixes SMC.layers.geometry.CanvasRenderer
+ * @param {SMC.layers.geometry.TiledGeometryLayer~options} options - The configuration for the class
+ *
+ * @author Luis Román (lroman@emergya.com)
+ */
+SMC.layers.geometry.TiledGeometryLayer = L.TileLayer.Canvas.extend(
+    /** @lends SMC.layers.geometry.TiledGeometryLayer# */
+    {
+
+        includes: SMC.Util.deepClassInclude([SMC.layers.SingleLayer, SMC.layers.geometry.CanvasRenderer]),
+        /**
+         * @typedef {Object} SMC.layers.geometry.TiledGeometryLayer~options
+         * @property {number} tileSize=256 - Default tile size value
+         */
+        options: {
+            tileSize: 256,
+        },
+        /**
+         * Global tree
+         * @property {string} globalTree - Default global tree
+         * @default null
+         */
+        globalTree: null,
+        /**
+         * Features array
+         * @property {object[]} features - Default features array
+         * @default []
+         */
+        features: [],
+        /**
+         * Tiles load variable
+         * @property {number} tilesLoad - Default tiles load variable
+         * @default 1
+         */
+        tilesLoad: 0,
+        /**
+         * Tiles to load
+         * @property {object} tilesToLoad - Default tiles to load
+         * @default null
+         */
+        tilesToLoad: null,
+
+        /**
+         * Initialize the object with the params
+         * @param {object} options - object with need parameters
+         */
+        initialize: function(options) {
+            L.Util.setOptions(this, options);
+            L.TileLayer.Canvas.prototype.initialize.call(this, options);
+            SMC.layers.geometry.CanvasRenderer.prototype.initialize.call(this, options);
+            SMC.layers.stylers.MapCssStyler.prototype.initialize.apply(this, arguments);
+
+
+
+            this.drawTile = function(canvas, tilePoint, zoom) {
+                var ctx = {
+                    canvas: canvas,
+                    tile: tilePoint,
+                    zoom: this._getZoomForUrl()
+                };
+
+                if (this.globalTree === null || this.lastZoom != zoom) {
+                    this.globalTree = rbush(9, ['.minx', '.miny', '.maxx', '.maxy']);
+                    this.lastZoom = zoom;
+
+                }
+
+                ctx.canvas.tree = null;
+
+                if (ctx.canvas.tree === null || this.lastZoom != zoom) {
+                    ctx.canvas.tree = rbush(9, ['.minx', '.miny', '.maxx', '.maxy']);
+                    this.lastZoom = zoom;
+                }
+
+                this._draw(ctx);
+                if (!this.tilesToLoad) {
+                    this.tilesToLoad = this._tilesToLoad;
+                }
+            };
+
+
+
+        },
+
+        /**
+         * Method to load the layer on the map
+         */
+        load: function() {
+
+        },
+
+        /**
+         * Method to load a tile on the map
+         * @abstract
+         */
+        loadTile: function() {
+            throw new Error("TiledGeometrylayer::loadTile must be implemented by derivate classes.");
+        },
+
+        /**
+         * Method to load the control in the map
+         * @param {SMC.Map} map - Map to be added
+         */
+        onAdd: function(map) {
+            L.TileLayer.Canvas.prototype.onAdd.call(this, map);
+            SMC.layers.geometry.CanvasRenderer.prototype.onAdd.apply(this, arguments);
+            SMC.layers.SingleLayer.prototype.onAdd.call(this, map);
+            map.fire('layeradd',{
+                layer: this
+            });
+
+        },
+
+        onRemove: function(map) {
+            SMC.layers.geometry.CanvasRenderer.prototype.onRemove.call(this);
+            L.TileLayer.Canvas.prototype.onRemove.call(this, map);
+            //SMC.layers.SingleLayer.prototype.onRemove.call(this, map);
+
+        },
+
+        getMap: function() {
+            return this._map;
+        },
+
+        _draw: function(ctx) {
+
+
+            var bounds = this._tileBounds(ctx);
+
+
+            // var request = this.createRequest(bounds, ctx);
+            // var loader = $.ajax;
+            var self = this;
+            // loader($.extend(request, {
+            //     success: function(response) {
+            //         console.log(response.features);
+            //         self.addTiledGeometryFromFeatures(response.features, ctx);
+
+            //     }
+            // }, this.options.request));
+
+            this.loadTile(bounds).then(function(featuresCollection) {
+                console.log(featuresCollection.features);
+                self.addTiledGeometryFromFeatures(featuresCollection.features, ctx);
+            });
+        },
+
+        /**
+         * Method to add a tiled geometry from a features set
+         * @param {object} features - features set to get its geometries
+         * @param {object} ctx - function context
+         * @param {object} skipTree - variable to skip tree
+         */
+        addTiledGeometryFromFeatures: function(features, ctx, skipTree) {
+            var f;
+            if (L.Util.isArray(features)) {
+                f = features;
+            } else if (arguments.length > 1) {
+                f = arguments;
+            } else {
+                f = [features];
+            }
+
+
+
+            for (i = 0; i &lt; f.length; i++) {
+                var feature = f[i];
+                this._setProperties(feature);
+
+
+
+                //We store the retrieved features in a search tree.
+                if (!skipTree) {
+                    var treeNode = this._createTreeData(feature, ctx.tile);
+                    ctx.canvas.tree.insert(treeNode);
+                    this.globalTree.insert(treeNode);
+
+                }
+            }
+
+
+            if (f.length !== 0) {
+
+                this.renderCanvas(ctx, f, this._map);
+            }
+            this.tilesLoad++;
+            if (this.tilesLoad == this.tilesToLoad) {
+                SMC.layers.geometry.CanvasRenderer.prototype.initialize.call(this, this.options);
+            }
+
+
+        },
+
+        _setProperties: function(feature) {
+            var id = this.options.idField;
+            if (feature.hasOwnProperty(id)) {
+                feature.id = feature[id];
+            } else {
+
+                for (var propKey in feature) {
+                    if (feature[propKey].hasOwnProperty(id)) {
+                        feature.id = feature[propKey][id];
+                    }
+                }
+
+            }
+
+
+            if (this.features.length == 0) {
+                this.features.push(feature);
+
+            } else {
+                var sameFeature = false;
+                for (var j = 0; j &lt; this.features.length; j++) {
+                    if (feature.id == this.features[j].id) {
+                        feature.id = this.features[j].id;
+                        feature.selected = this.features[j].selected;
+                        feature.properties = this.features[j].properties;
+                        sameFeature = true;
+                        break;
+                    }
+
+                }
+
+                if (!sameFeature) {
+                    this.features.push(feature);
+                }
+            }
+
+
+        },
+
+
+
+        _createTreeData: function(feature, tilePoint) {
+
+            var bbox = this._featureBBox(feature);
+
+
+            return {
+                id: feature.properties.id,
+                feature: feature,
+                minx: bbox.min.x,
+                maxx: bbox.max.x,
+                miny: bbox.min.y,
+                maxy: bbox.max.y,
+                tilePoint: tilePoint
+            };
+
+        },
+
+        _featureBBox: function(feature) {
+            var points = [];
+
+            var geom = feature.geometry.coordinates;
+            var type = feature.geometry.type;
+            switch (type) {
+                case 'Point':
+                case 'LineString':
+                case 'Polygon':
+                    points = [geom];
+                    break;
+
+                case 'MultiPoint':
+                case 'MultiLineString':
+
+                    for (var j = 0; j &lt; geom.length; j++) {
+                        points = points.concat(geom[j]);
+                    }
+
+                    break;
+                case 'MultiPolygon':
+                    if (L.Util.isArray(geom[0])) {
+                        geom = geom[0];
+
+                    }
+
+                    for (var j = 0; j &lt; geom.length; j++) {
+                        points = points.concat(geom[j]);
+                    }
+
+                    break;
+
+                default:
+                    throw new Error('Unmanaged type: ' + type);
+            }
+
+
+            return L.bounds(points);
+        },
+
+
+
+        _tileBounds: function(ctx) {
+            var nwPoint = ctx.tile.multiplyBy(this.options.tileSize);
+            var sePoint = nwPoint.add(new L.Point(this.options.tileSize, this.options.tileSize));
+
+            // optionally, enlarge request area.
+            // with this I can draw points with coords outside this tile area,
+            // but with part of the graphics actually inside this tile.
+            // NOTE: that you should use this option only if you're actually drawing points!
+            var buf = this.options.buffer;
+            if (buf > 0) {
+                var diff = new L.Point(buf, buf);
+                nwPoint = nwPoint.subtract(diff);
+                sePoint = sePoint.add(diff);
+            }
+
+            var nwCoord = this._map.unproject(nwPoint, ctx.zoom, true);
+            var seCoord = this._map.unproject(sePoint, ctx.zoom, true);
+            return [nwCoord.lng, seCoord.lat, seCoord.lng, nwCoord.lat];
+        },
+
+        /**
+         * Method to update the style of a feature
+         * @param {object} feature - feature to be updated
+         */
+        updateFeature: function(feature) {
+
+            for (var k = 0; k &lt; this.features.length; k++) {
+                if (feature.id == this.features[k].id) {
+                    if (feature.selected !== undefined) {
+                        this.features[k].selected = feature.selected;
+                    }
+                    this.features[k].properties = feature.properties;
+                    break;
+                }
+            }
+
+            var bbox = this._featureBBox(feature);
+
+            var intersectingFeatureNodes = this.globalTree.search([bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y]);
+
+
+            // we determine the tiles to be redrawn from the features.
+            var readdedTileKeys = [];
+
+            for (var i = 0; i &lt; intersectingFeatureNodes.length; i++) {
+                var featureTilePoint = intersectingFeatureNodes[i].tilePoint;
+
+
+                var key = featureTilePoint.x + ":" + featureTilePoint.y;
+
+                if (readdedTileKeys.indexOf(key) &lt; 0) {
+
+                    readdedTileKeys.push(key);
+                    var tile = this._tiles[key];
+                    if (this._map) { // If we removed the layer we don't want updates.
+
+
+                        var ctx = {
+                            canvas: tile,
+                            tile: featureTilePoint,
+                            zoom: this._map.getZoom() // fix for https://github.com/CloudMade/Leaflet/pull/993
+                        };
+
+
+                        var tileFeatures = ctx.canvas.tree.search(this._tileBounds(ctx));
+
+                        var updatedFeatures = [];
+
+                        for (var j = 0; j &lt; tileFeatures.length; j++) {
+                            var existingFeature = tileFeatures[j].feature;
+
+
+                            if (existingFeature.id == feature.id) {
+                                // We update the data!!!!
+
+                                existingFeature.properties = feature.properties;
+                                if (feature.selected != undefined) {
+                                    existingFeature.selected = feature.selected;
+                                }
+                                existingFeature._clean = false;
+
+
+                            }
+
+
+
+                            updatedFeatures.push(existingFeature);
+
+                        }
+
+
+                        this.renderCanvas(ctx, updatedFeatures, this._map);
+
+
+                    }
+
+                }
+            }
+
+
+        },
+
+        /**
+         * Method to create a request to get features
+         * @param {object} bounds - bound limit to request
+         * @param {object} ctx - function context
+         */
+        createRequest: function(bounds, ctx) {
+            // override with your code
+        }
+
+    });</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeControl.html">LayerTreeControl</a></li><li><a href="SMC.controls.layerTree.LayerTreeLeaf.html">LayerTreeLeaf</a></li><li><a href="SMC.controls.layerTree.LayerTreeNode.html">LayerTreeNode</a></li><li><a href="SMC.layers.aggregation.AggregatingLayer.html">AggregatingLayer</a></li><li><a href="SMC.layers.aggregation.MultiModeLayer.html">MultiModeLayer</a></li><li><a href="SMC.layers.EditableLayer.html">EditableLayer</a></li><li><a href="SMC.layers.Folder.html">Folder</a></li><li><a href="SMC.layers.geometry.CanvasRenderer.html">CanvasRenderer</a></li><li><a href="SMC.layers.geometry.GeometryLayer.html">GeometryLayer</a></li><li><a href="SMC.layers.geometry.TiledGeometryLayer.html">TiledGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSGeometryLayer.html">WFSGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html">WFSTiledGeometryLayer</a></li><li><a href="SMC.layers.history.AggregatingHistoryLayer.html">AggregatingHistoryLayer</a></li><li><a href="SMC.layers.history.DataHistoryLayer.html">DataHistoryLayer</a></li><li><a href="SMC.layers.Layer.html">Layer</a></li><li><a href="SMC.layers.markers.AtmosphereRTMarkerLayer.html">AtmosphereRTMarkerLayer</a></li><li><a href="SMC.layers.markers.MarkerLayer.html">MarkerLayer</a></li><li><a href="SMC.layers.markers.WFSMarkerLayer.html">WFSMarkerLayer</a></li><li><a href="SMC.layers.markers.WFSTMarkerLayer.html">WFSTMarkerLayer</a></li><li><a href="SMC.layers.reloaders.LayerReloader.html">LayerReloader</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html">ReloadTrigger</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html">TimerReloadTrigger</a></li><li><a href="SMC.layers.stylers.Styler.html">Styler</a></li><li><a href="SMC.layers.TileLayer.html">TileLayer</a></li><li><a href="SMC.layers.WMSLayer.html">WMSLayer</a></li><li><a href="SMC.Map.html">Map</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html">AtmosphereRTFeatureProvider</a></li><li><a href="SMC.providers.FeatureHistory.html">FeatureHistory</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html">FeatureHistoryProvider</a></li><li><a href="SMC.providers.FeaturesProvider.html">FeaturesProvider</a></li><li><a href="SMC.providers.RTFeatureProvider.html">RTFeatureProvider</a></li><li><a href="SMC.providers.URLFeatureProvider.html">URLFeatureProvider</a></li><li><a href="SMC.providers.WFSProvider.html">WFSProvider</a></li><li><a href="SMC.providers.WFSTProvider.html">WFSTProvider</a></li></ul><h3>Events</h3><ul><li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html#event:featureHistoryLoaded">featureHistoryLoaded</a></li><li><a href="SMC.providers.FeaturesProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.RTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.URLFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSTProvider.html#event:featuresLoaded">featuresLoaded</a></li></ul><h3>Namespaces</h3><ul><li><a href="SMC.html">SMC</a></li><li><a href="SMC.controls.html">controls</a></li><li><a href="SMC.controls.layerTree.html">layerTree</a></li><li><a href="SMC.layers.html">layers</a></li><li><a href="SMC.layers.aggregation.html">aggregation</a></li><li><a href="SMC.layers.geometry.html">geometry</a></li><li><a href="SMC.layers.history.html">history</a></li><li><a href="SMC.layers.markers.html">markers</a></li><li><a href="SMC.layers.reloaders.html">reloaders</a></li><li><a href="SMC.layers.stylers.html">stylers</a></li><li><a href="SMC.providers.html">providers</a></li></ul><h3>Mixins</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeFolder.html">LayerTreeFolder</a></li><li><a href="SMC.LayerLoader.html">LayerLoader</a></li><li><a href="SMC.layers.SingleLayer.html">SingleLayer</a></li><li><a href="SMC.layers.stylers.MapCssStyler.html">MapCssStyler</a></li><li><a href="SMC.layers.stylers.MarkerCssStyler.html">MarkerCssStyler</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Mustache">Mustache</a></li><li><a href="global.html#paper">paper</a></li><li><a href="global.html#PEG">PEG</a></li><li><a href="global.html#rbush">rbush</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha8</a> on Wed Jul 30 2014 10:34:07 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
