@@ -41,11 +41,11 @@ var editable_layers = [];
  * @author Moisés Arcos (marcos@emergya.com)
  */
 SMC.layers.markers.WFSTMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
-	/** @lends SMC.layers.markers.WFSTMarkerLayer# */
-	{
+    /** @lends SMC.layers.markers.WFSTMarkerLayer# */
+    {
         featuresEdited: new L.LayerGroup(),
 
-		/**
+        /**
          * Initialize the object with the params
          * @param {object} options - object with need parameters
          */
@@ -71,52 +71,69 @@ SMC.layers.markers.WFSTMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
         },
 
         /**
-         * Method to create an HTML node for the name of the layer.
-         * @returns {String} HTML code representing the code to be added to the layer's entry in the layer tree.
-         */
-        createNodeHTML: function() {
-            var node = this._addEditButton();
-            if(node == null){
-                node = this.options.label || this.options.typeName;
-            }
-            return node;
-        },
-
-        /**
          * Method to load the control in the map
          * @param {SMC.Map} map - Map to be added
          */
-        onAdd: function(map){
+        onAdd: function(map) {
             editable_layers.push(this);
+            SMC.layers.EditableLayer.prototype.onAdd.call(this, map);
             SMC.layers.markers.MarkerLayer.prototype.onAdd.call(this, map);
+            this._setButtonState(this);
         },
         /**
          * Method to remove the control in the map
          * @param {SMC.Map} map - Map to be removed
          */
-        onRemove: function(map){
+        onRemove: function(map) {
+            this._editing = false;
+            this._finishEditControl(this.options);
+
             var index = this._getIndexFromEditableLayer(this);
-            if(index > -1){
+            if (index > -1) {
                 editable_layers.splice(index, 1);
             }
+            SMC.layers.EditableLayer.prototype.onRemove.call(this, map);
             SMC.layers.markers.MarkerLayer.prototype.onRemove.call(this, map);
+
         },
+
+        _setButtonState: function(layer){
+            var editing;
+            for (var i = 0; i &lt; editable_layers.length; i++) {
+                if(editable_layers[i]._editing){
+                   editing = true;
+                }
+            }
+            var label = layer.options.label;
+            var layer_div = $("[id='" + label + "']")[0];
+            var buttons = $("input[type=button]", layer_div);
+            for (j = 0; j &lt; buttons.length; j++) {
+                if(editing){
+                    buttons[j].disabled = true;
+                }else{
+                    buttons[j].disabled = false;
+                }
+            }
+           
+                   
+        },
+
 
         /**
          * Method to add edit control to map
          * @private
          * @param {Object} options - Event to handler
          */
-        _startEditControl: function(options){
-            if(this._map &amp;&amp; !this._drawControl){
-                for(var i=0; i&lt;editable_layers.length; i++){
-                    if(editable_layers[i]._leaflet_id != this._leaflet_id){
+        _startEditControl: function(options) {
+            if (this._map &amp;&amp; !this._drawControl) {
+                for (var i = 0; i &lt; editable_layers.length; i++) {
+                    if (editable_layers[i]._leaflet_id != this._leaflet_id) {
                         var label = editable_layers[i].options.label;
                         var layer_div = $("[id='" + label + "']")[0];
                         var buttons = $("input[type=button]", layer_div);
-                        var check =  $("input[type=checkbox][id=" + editable_layers[i]._leaflet_id + "]")[0];
-                        for(j=0; j&lt;buttons.length; j++){
-                            if(check.checked &amp;&amp; !buttons[j].disabled){
+                        var check = $("input[type=checkbox][id=" + editable_layers[i]._leaflet_id + "]")[0];
+                        for (j = 0; j &lt; buttons.length; j++) {
+                            if (check.checked &amp;&amp; !buttons[j].disabled) {
                                 buttons[j].disabled = true;
                             }
                         }
@@ -129,7 +146,8 @@ SMC.layers.markers.WFSTMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
                         polyline: false,
                         polygon: false,
                         rectangle: false,
-                        circle: false
+                        circle: false,
+                        isochrone: false
                     },
                     edit: {
                         featureGroup: this.noClusterGroup
@@ -137,76 +155,81 @@ SMC.layers.markers.WFSTMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
                 });
                 this._map.addControl(this._drawControl);
                 // Marker created
-                this._map.on('draw:created', function (e) {
+                this._map.on('draw:created', function(e) {
                     var layer = e.layer;
                     self.removeLayer(e.layer);
                     // Update the added features
-                   self._insert(layer);
+                    self._insert(layer);
+                    
+
+
 
                 });
                 // Marker edited
-                this._map.on('draw:edited', function (e) {
+                this._map.on('draw:edited', function(e) {
                     var layers = e.layers;
                     // Update the edited features
-                    if(!$.isEmptyObject(layers._layers)){
+                    if (!$.isEmptyObject(layers._layers)) {
                         self._update(layers);
                     }
                 });
-                
+
                 //Marker attributes edited
-                this._map.on('editAttributes', function(e){
+                this._map.on('editAttributes', function(e) {
                     var layer = e.layer;
                     layer.closePopup();
                     //Open attributes edition popup
                     var content = self._setAttrEditor(layer);
                     layer.bindPopup(content).openPopup();
-                    
-                    
+
+
                 });
 
                 //Save marker attributes edited
-                this._map.on('draw:editedData', function (e) {
+                this._map.on('draw:editedData', function(e) {
                     var layers = self.featuresEdited;
 
                     // Update the edited features
                     layers.save = true;
-                   if(!$.isEmptyObject(layers._layers)){
+                    if (!$.isEmptyObject(layers._layers)) {
                         self._update(layers);
                     }
 
                     //Update properties of changed layers
-                    for(var i in layers._layers){
+                    for (var i in layers._layers) {
                         layers._layers[i].propertiesInicial = layers._layers[i].feature.properties;
                     }
-    
-                    
+
+
                 });
 
-                this._map.on('draw:editDatastop', function (){
+                this._map.on('draw:editDatastop', function() {
                     var layers = self.featuresEdited;
-                    if(!layers.save){
-                        for(var i in layers._layers){
-                            var f = layers._layers[i].feature;
-                            var propIni = layers._layers[i].propertiesInicial;
-                            if(propIni){
-                                for (var j in f.properties){
-                                    f.properties[j] = propIni[j];
-                                } 
+                    if (!$.isEmptyObject(layers._layers)){
+                        if (!layers.save) {
+                            for (var i in layers._layers) {
+                                var f = layers._layers[i].feature;
+                                var propIni = layers._layers[i].propertiesInicial;
+                                if (propIni) {
+                                    for (var j in f.properties) {
+                                        f.properties[j] = propIni[j];
+                                    }
+                                }
                             }
                         }
-                    }
-                    layers.save = false;
-                        for(var i in layers._layers){
+                        layers.save = false;
+                        for (var i in layers._layers) {
                             layers._layers[i].closePopup();
                             self._applyStyles(layers._layers[i], false);
-                        } 
+                        }
+                    }
                 });
                 // Marker removed
-                this._map.on('draw:deleted', function (e) {
+                this._map.on('draw:deleted', function(e) {
                     var layers = e.layers;
                     // Remove the deleted features
                     self._delete(layers);
-                }); 
+                });
             }
         },
 
@@ -215,29 +238,44 @@ SMC.layers.markers.WFSTMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
          * @private
          * @param {Object} options - Event to handler
          */
-        _finishEditControl: function(options){
-            if(this._drawControl){
-                for(var i=0; i&lt;editable_layers.length; i++){
-                    if(editable_layers[i]._leaflet_id != this._leaflet_id){
+        _finishEditControl: function(options) {
+            if (this._drawControl) {
+                for (var i = 0; i &lt; editable_layers.length; i++) {
+                    editable_layers[i].featuresEdited.clearLayers();
+                    if (editable_layers[i]._leaflet_id != this._leaflet_id) {
                         var label = editable_layers[i].options.label;
                         var layer_div = $("[id='" + label + "']")[0];
                         var buttons = $("input[type=button]", layer_div);
-                        var check =  $("input[type=checkbox][id=" + editable_layers[i]._leaflet_id + "]")[0];
-                        for(j=0; j&lt;buttons.length; j++){
-                            if(check.checked){
-                                if(buttons[j].disabled){
-                                    buttons[j].disabled = false;
+                        var check = $("input[type=checkbox][id=" + editable_layers[i]._leaflet_id + "]")[0];
+                        for (j = 0; j &lt; buttons.length; j++) {
+                            if (check.checked) {
+                                if (buttons[j].disabled) {
+                                    buttons[j].disabled = false;   
                                 }
                             }
                         }
                     }
+                    else{
+                        var label = this.options.label;
+                        var layer_div = $("[id='" + label + "']")[0];
+                        var buttons = $("input[type=button]", layer_div);
+                        for (j = 0; j &lt; buttons.length; j++) {
+                            buttons[j].setAttribute("value", this.options.editButtonLabel);
+                        }
+                        
+                    }
                 }
                 this._map.removeControl(this._drawControl);
                 this._drawControl = null;
+                this._map.off('draw:created');
+                this._map.off('draw:deleted');
+             
             }
         },
 
-        _setAttrEditor:function(layer){
+       
+
+        _setAttrEditor: function(layer) {
             var self = this;
             var content = document.createElement('div');
             var header = document.createElement('div');
@@ -246,94 +284,106 @@ SMC.layers.markers.WFSTMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
             header.style.fontWeight = 'bold';
             content.appendChild(header);
 
-
+            var table = document.createElement('table');  
             var prop = layer.feature.properties;
-            var noEditables = this._getNotNull();
-            for(var i in prop){
+            var noEditables = this._getNotEditables();
+            for (var i in prop) {
                 var noNull = false;
                 var value = prop[i];
-                if(value == null){
+                if (value == null) {
                     value = '';
                 }
-                for(var j = 0; j &lt; noEditables.length; j++){
-                    if(i == noEditables[j]){
+                for (var j = 0; j &lt; noEditables.length; j++) {
+                    if (i == noEditables[j]) {
                         noNull = true;
                     }
                 }
 
-                var attr = document.createElement('div');
-                attr.innerHTML = i + ": ";
-                var attrValue = document.createElement('input'); 
-                if(noNull){
-                    attrValue.disabled = true;
+
+
+                var row = document.createElement('tr');
+                var td = document.createElement("td");
+                td.style.fontSize = "10pt";
+                td.innerHTML = i + ": ";
+                row.appendChild(td);
+                var rowInput = document.createElement('input');
+                if (noNull) {
+                    rowInput.disabled = true;
                 }
-                attrValue.type = 'text';
-                attrValue.value = value;
-                attrValue.style.width = '90px';
-                attrValue.style.height = '18px';
-                attrValue.style.float = 'right';
-                attrValue.className = 'attributes';
-                attr.appendChild(attrValue);
-                content.appendChild(attr);
-                var br = document.createElement('br');
-                content.appendChild(br);
+                rowInput.type = 'text';
+                rowInput.value = value;
+                rowInput.style.width = '120px';
+                rowInput.style.float = 'right';
+                rowInput.className = 'attributes';
+                td = document.createElement("td");
+                td.appendChild(rowInput);
+                row.appendChild(td);
+                table.appendChild(row);
             }
+
+            content.appendChild(table);
+
+            var buttons = document.createElement('center');
             var save = document.createElement('input');
             save.type = 'button';
-            save.value='Save edition';
-            save.onclick = function(){
+            save.value = 'Save edition';
+            save.onclick = function() {
 
                 self._save(layer, content);
             }
-            content.appendChild(save);
+            buttons.appendChild(save);
             var cancel = document.createElement('input');
             cancel.type = 'button';
-            cancel.value='Cancel';
-            cancel.onclick = function(){
-                 layer.closePopup();
-                 
+            cancel.value = 'Cancel';
+            cancel.onclick = function() {
+                layer.closePopup();
+
             }
-            content.appendChild(cancel);
+            buttons.appendChild(cancel);
+            content.appendChild(buttons);
             this.featuresEdited.addLayer(layer);
-         
-           return content; 
+
+            return content;
 
         },
 
-        _getNotNull: function(){
-            var noEditables = [];
-             $.ajax({
+        _getNotEditables: function() {
+            var noEditables = this.options.readOnlyFields;
+            var _this = this;
+            $.ajax({
                 type: "GET",
-                url: this.options.serverURL + "?request=DescribeFeatureType&amp;version=1.1.0&amp;typename=" + this.options.typeName,
+                url: this.options.serverURL + "?request=DescribeFeatureType&amp;version=1.1.0&amp;typename=" +
+                    this.options.typeName,
                 dataType: "xml",
                 contentType: "text/xml",
                 async: false,
                 success: function(xml, status, object) {
-                    var attributes = xml.getElementsByTagName('sequence')[0].getElementsByTagName('element');
-                    for(var i = 0; i &lt; attributes.length; i++){
-                        if(attributes[i].getAttribute('nillable') ==  "false" ){
+                    var attributes = _this._getElementsByTagNameNS(_this._getElementsByTagNameNS(xml,'xsd', 'sequence')[0], 'xsd', 'element');
+                    
+                    for (var i = 0; i &lt; attributes.length; i++) {
+                        if (attributes[i].getAttribute('nillable') == "false") {
                             noEditables.push(attributes[i].getAttribute('name'));
                         }
                     }
                 }
             });
-             return noEditables;
+            return noEditables;
         },
 
-        _save:function(layer, content){ 
+        _save: function(layer, content) {
             var prop = layer.feature.properties;
             var propInitial = {};
             var attributes = content.getElementsByClassName('attributes');
             var i = 0;
-            for(var j in prop){
+            for (var j in prop) {
                 propInitial[j] = prop[j];
                 prop[j] = attributes[i].value;
                 i++;
             }
             layer.propertiesInicial = propInitial;
-            
-             layer.closePopup();
-            
+
+            layer.closePopup();
+
         },
 
         _applyStyles: function(marker, inCluster) {
@@ -341,16 +391,16 @@ SMC.layers.markers.WFSTMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
                 this.noClusterGroup.addLayer(marker);
                 return;
             }
-            
-           // var zoom = this._map.getZoom();
-            if(!zoom){
-               var zoom = this.getMap().getZoom();
+
+            // var zoom = this._map.getZoom();
+            if (!zoom) {
+                var zoom = this.getMap().getZoom();
             }
             var style = this.applyStyle(marker.feature, zoom);
             if (style.icon) {
                 marker.setIcon(style.icon);
             }
-             if (style.opacity) {
+            if (style.opacity) {
                 marker.setOpacity(style.opacity);
             }
             this.noClusterGroup.removeLayer(marker);
@@ -358,17 +408,17 @@ SMC.layers.markers.WFSTMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
 
             this.addPopUp(marker, zoom);
         },
-        _getIndexFromEditableLayer: function(layer){
+        _getIndexFromEditableLayer: function(layer) {
             var index = -1;
-            for(var i=0; i&lt;editable_layers.length; i++){
-                if(editable_layers[i]._leaflet_id == layer._leaflet_id){
+            for (var i = 0; i &lt; editable_layers.length; i++) {
+                if (editable_layers[i]._leaflet_id == layer._leaflet_id) {
                     index = i;
                     break;
                 }
             }
             return index;
         },
-	}, [SMC.layers.EditableLayer, SMC.providers.WFSTProvider]);
+    }, [SMC.layers.EditableLayer, SMC.providers.WFSTProvider]);
 
 /**
  * API factory method for ease creation of wfs features providers.
@@ -376,7 +426,8 @@ SMC.layers.markers.WFSTMarkerLayer = SMC.layers.markers.MarkerLayer.extend(
  */
 SMC.wfstMarkerLayer = function(options) {
     return new SMC.layers.markers.WFSTMarkerLayer(options);
-};</code></pre>
+};
+</code></pre>
         </article>
     </section>
 
@@ -386,13 +437,13 @@ SMC.wfstMarkerLayer = function(options) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeControl.html">LayerTreeControl</a></li><li><a href="SMC.controls.layerTree.LayerTreeLeaf.html">LayerTreeLeaf</a></li><li><a href="SMC.controls.layerTree.LayerTreeNode.html">LayerTreeNode</a></li><li><a href="SMC.layers.aggregation.AggregatingLayer.html">AggregatingLayer</a></li><li><a href="SMC.layers.aggregation.MultiModeLayer.html">MultiModeLayer</a></li><li><a href="SMC.layers.EditableLayer.html">EditableLayer</a></li><li><a href="SMC.layers.Folder.html">Folder</a></li><li><a href="SMC.layers.geometry.CanvasRenderer.html">CanvasRenderer</a></li><li><a href="SMC.layers.geometry.GeometryLayer.html">GeometryLayer</a></li><li><a href="SMC.layers.geometry.TiledGeometryLayer.html">TiledGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSGeometryLayer.html">WFSGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html">WFSTiledGeometryLayer</a></li><li><a href="SMC.layers.history.AggregatingHistoryLayer.html">AggregatingHistoryLayer</a></li><li><a href="SMC.layers.history.DataHistoryLayer.html">DataHistoryLayer</a></li><li><a href="SMC.layers.Layer.html">Layer</a></li><li><a href="SMC.layers.markers.AtmosphereRTMarkerLayer.html">AtmosphereRTMarkerLayer</a></li><li><a href="SMC.layers.markers.MarkerLayer.html">MarkerLayer</a></li><li><a href="SMC.layers.markers.WFSMarkerLayer.html">WFSMarkerLayer</a></li><li><a href="SMC.layers.markers.WFSTMarkerLayer.html">WFSTMarkerLayer</a></li><li><a href="SMC.layers.reloaders.AtmosphereRTReloadTrigger.html">AtmosphereRTReloadTrigger</a></li><li><a href="SMC.layers.reloaders.LayerReloader.html">LayerReloader</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html">ReloadTrigger</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html">TimerReloadTrigger</a></li><li><a href="SMC.layers.stylers.Styler.html">Styler</a></li><li><a href="SMC.layers.TileLayer.html">TileLayer</a></li><li><a href="SMC.layers.WMSLayer.html">WMSLayer</a></li><li><a href="SMC.Map.html">Map</a></li><li><a href="SMC.providers.AtmosphereConnector.html">AtmosphereConnector</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html">AtmosphereRTFeatureProvider</a></li><li><a href="SMC.providers.FeatureHistory.html">FeatureHistory</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html">FeatureHistoryProvider</a></li><li><a href="SMC.providers.FeaturesProvider.html">FeaturesProvider</a></li><li><a href="SMC.providers.RTFeatureProvider.html">RTFeatureProvider</a></li><li><a href="SMC.providers.URLFeatureProvider.html">URLFeatureProvider</a></li><li><a href="SMC.providers.WFSProvider.html">WFSProvider</a></li><li><a href="SMC.providers.WFSTProvider.html">WFSTProvider</a></li></ul><h3>Events</h3><ul><li><a href="SMC.layers.geometry.TiledGeometryLayer.html#event:layeradd">layeradd</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html#event:layeradd">layeradd</a></li><li><a href="SMC.layers.reloaders.AtmosphereRTReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.providers.AtmosphereConnector.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html#event:featureHistoryLoaded">featureHistoryLoaded</a></li><li><a href="SMC.providers.FeaturesProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.RTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.URLFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSTProvider.html#event:featuresLoaded">featuresLoaded</a></li></ul><h3>Namespaces</h3><ul><li><a href="SMC.html">SMC</a></li><li><a href="SMC.controls.html">controls</a></li><li><a href="SMC.controls.layerTree.html">layerTree</a></li><li><a href="SMC.layers.html">layers</a></li><li><a href="SMC.layers.aggregation.html">aggregation</a></li><li><a href="SMC.layers.geometry.html">geometry</a></li><li><a href="SMC.layers.history.html">history</a></li><li><a href="SMC.layers.markers.html">markers</a></li><li><a href="SMC.layers.reloaders.html">reloaders</a></li><li><a href="SMC.layers.stylers.html">stylers</a></li><li><a href="SMC.providers.html">providers</a></li></ul><h3>Mixins</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeFolder.html">LayerTreeFolder</a></li><li><a href="SMC.LayerLoader.html">LayerLoader</a></li><li><a href="SMC.layers.SingleLayer.html">SingleLayer</a></li><li><a href="SMC.layers.stylers.MapCssStyler.html">MapCssStyler</a></li><li><a href="SMC.layers.stylers.MarkerCssStyler.html">MarkerCssStyler</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Mustache">Mustache</a></li><li><a href="global.html#paper">paper</a></li><li><a href="global.html#PEG">PEG</a></li><li><a href="global.html#rbush">rbush</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeControl.html">LayerTreeControl</a></li><li><a href="SMC.controls.layerTree.LayerTreeLeaf.html">LayerTreeLeaf</a></li><li><a href="SMC.controls.layerTree.LayerTreeNode.html">LayerTreeNode</a></li><li><a href="SMC.layers.aggregation.AggregatingLayer.html">AggregatingLayer</a></li><li><a href="SMC.layers.aggregation.MultiModeLayer.html">MultiModeLayer</a></li><li><a href="SMC.layers.EditableLayer.html">EditableLayer</a></li><li><a href="SMC.layers.Folder.html">Folder</a></li><li><a href="SMC.layers.geometry.CanvasRenderer.html">CanvasRenderer</a></li><li><a href="SMC.layers.geometry.GeometryLayer.html">GeometryLayer</a></li><li><a href="SMC.layers.geometry.TiledGeometryLayer.html">TiledGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSGeometryLayer.html">WFSGeometryLayer</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html">WFSTiledGeometryLayer</a></li><li><a href="SMC.layers.history.AggregatingHistoryLayer.html">AggregatingHistoryLayer</a></li><li><a href="SMC.layers.history.DataHistoryLayer.html">DataHistoryLayer</a></li><li><a href="SMC.layers.IsochroneLayer.html">IsochroneLayer</a></li><li><a href="SMC.layers.Layer.html">Layer</a></li><li><a href="SMC.layers.markers.AtmosphereRTMarkerLayer.html">AtmosphereRTMarkerLayer</a></li><li><a href="SMC.layers.markers.MarkerLayer.html">MarkerLayer</a></li><li><a href="SMC.layers.markers.WFSMarkerLayer.html">WFSMarkerLayer</a></li><li><a href="SMC.layers.markers.WFSTMarkerLayer.html">WFSTMarkerLayer</a></li><li><a href="SMC.layers.reloaders.AtmosphereRTReloadTrigger.html">AtmosphereRTReloadTrigger</a></li><li><a href="SMC.layers.reloaders.LayerReloader.html">LayerReloader</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html">ReloadTrigger</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html">TimerReloadTrigger</a></li><li><a href="SMC.layers.stylers.Styler.html">Styler</a></li><li><a href="SMC.layers.TileLayer.html">TileLayer</a></li><li><a href="SMC.layers.WMSLayer.html">WMSLayer</a></li><li><a href="SMC.Map.html">Map</a></li><li><a href="SMC.providers.AtmosphereConnector.html">AtmosphereConnector</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html">AtmosphereRTFeatureProvider</a></li><li><a href="SMC.providers.FeatureHistory.html">FeatureHistory</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html">FeatureHistoryProvider</a></li><li><a href="SMC.providers.FeaturesProvider.html">FeaturesProvider</a></li><li><a href="SMC.providers.RTFeatureProvider.html">RTFeatureProvider</a></li><li><a href="SMC.providers.URLFeatureProvider.html">URLFeatureProvider</a></li><li><a href="SMC.providers.WFSProvider.html">WFSProvider</a></li><li><a href="SMC.providers.WFSTProvider.html">WFSTProvider</a></li></ul><h3>Events</h3><ul><li><a href="SMC.layers.geometry.TiledGeometryLayer.html#event:layeradd">layeradd</a></li><li><a href="SMC.layers.geometry.WFSTiledGeometryLayer.html#event:layeradd">layeradd</a></li><li><a href="SMC.layers.reloaders.AtmosphereRTReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.layers.reloaders.TimerReloadTrigger.html#event:reloadTriggered">reloadTriggered</a></li><li><a href="SMC.providers.AtmosphereConnector.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.AtmosphereRTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.FeatureHistoryProvider.html#event:featureHistoryLoaded">featureHistoryLoaded</a></li><li><a href="SMC.providers.FeaturesProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.RTFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.URLFeatureProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSProvider.html#event:featuresLoaded">featuresLoaded</a></li><li><a href="SMC.providers.WFSTProvider.html#event:featuresLoaded">featuresLoaded</a></li></ul><h3>Namespaces</h3><ul><li><a href="SMC.html">SMC</a></li><li><a href="SMC.controls.html">controls</a></li><li><a href="SMC.controls.layerTree.html">layerTree</a></li><li><a href="SMC.layers.html">layers</a></li><li><a href="SMC.layers.aggregation.html">aggregation</a></li><li><a href="SMC.layers.geometry.html">geometry</a></li><li><a href="SMC.layers.history.html">history</a></li><li><a href="SMC.layers.markers.html">markers</a></li><li><a href="SMC.layers.reloaders.html">reloaders</a></li><li><a href="SMC.layers.stylers.html">stylers</a></li><li><a href="SMC.providers.html">providers</a></li></ul><h3>Mixins</h3><ul><li><a href="SMC.controls.layerTree.LayerTreeFolder.html">LayerTreeFolder</a></li><li><a href="SMC.LayerLoader.html">LayerLoader</a></li><li><a href="SMC.layers.SingleLayer.html">SingleLayer</a></li><li><a href="SMC.layers.stylers.MapCssStyler.html">MapCssStyler</a></li><li><a href="SMC.layers.stylers.MarkerCssStyler.html">MarkerCssStyler</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Mustache">Mustache</a></li><li><a href="global.html#paper">paper</a></li><li><a href="global.html#PEG">PEG</a></li><li><a href="global.html#rbush">rbush</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Mon Oct 06 2014 09:26:27 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Tue Oct 28 2014 11:10:13 GMT+0100 (CET)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: ReloadTrigger</title>
+    <title>JSDoc: Class: IsochroneLayer</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: ReloadTrigger</h1>
+    <h1 class="page-title">Class: IsochroneLayer</h1>
 
     
 
@@ -27,9 +27,9 @@
 
 <header>
     <h2>
-        <span class="ancestors"><a href="SMC.html">SMC</a><a href="SMC.layers.html">.layers</a><a href="SMC.layers.reloaders.html">.reloaders</a>.</span>
+        <span class="ancestors"><a href="SMC.html">SMC</a><a href="SMC.layers.html">.layers</a>.</span>
     
-    ReloadTrigger
+    IsochroneLayer
     </h2>
     
 </header>
@@ -41,7 +41,7 @@
     
         
 <dt>
-    <h4 class="name" id="ReloadTrigger"><span class="type-signature">(abstract) </span>new ReloadTrigger<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="IsochroneLayer"><span class="type-signature"></span>new IsochroneLayer<span class="signature">()</span><span class="type-signature"></span></h4>
 
     
 </dt>
@@ -49,7 +49,7 @@
 
     
     <div class="description">
-        Base class for SMC viewer's layer reloader triggers.
+        Wrapper for <a href="http://leafletjs.com/reference.html#tilelayer-wms">Leaflet's WMS layer</a> so its integrated in the SMC's viewer layer architecture.
     </div>
     
 
@@ -89,7 +89,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ReloadTrigger.js.html">layers/reloaders/ReloadTrigger.js</a>, <a href="ReloadTrigger.js.html#line13">line 13</a>
+        <a href="IsochroneLayer.js.html">layers/IsochroneLayer.js</a>, <a href="IsochroneLayer.js.html#line14">line 14</a>
     </li></ul></dd>
     
 
@@ -123,7 +123,7 @@
         <h3 class="subsection-title">Extends</h3>
 
         <ul>
-            <li>L.Class</li>
+            <li>L.TileLayer.WMS</li>
         </ul>
     
 
@@ -131,7 +131,7 @@
         <h3 class="subsection-title">Mixes In</h3>
 
         <ul>
-            <li>L.Mixin.Events</li>
+            <li><a href="SMC.layers.SingleLayer.html">SMC.layers.SingleLayer</a></li>
         </ul>
     
 
@@ -146,107 +146,108 @@
     
 
     
-        <h3 class="subsection-title">Methods</h3>
+
+    
+        <h3 class="subsection-title">Type Definitions</h3>
 
         <dl>
-            
+                
 <dt>
-    <h4 class="name" id="_notifyReload"><span class="type-signature">(protected) </span>_notifyReload<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="options">options</h4>
 
     
 </dt>
 <dd>
-
-    
-    <div class="description">
-        Helper method to hide the launching of the event from implementing classes.
-    </div>
     
 
     
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
+<span class="param-type">Object</span>
 
-    
 
+            </li>
+        </ul>
     
 
     
 <dl class="details">
     
 
-    
+        <h5 class="subsection-title">Properties:</h5>
 
-    
+        <dl>
 
-    
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ReloadTrigger.js.html">layers/reloaders/ReloadTrigger.js</a>, <a href="ReloadTrigger.js.html#line39">line 39</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-    
-
-    
-    <h5>Fires:</h5>
-    <ul>
-        <li><a href="SMC.layers.reloaders.ReloadTrigger.html#event:reloadTriggered">SMC.layers.reloaders.ReloadTrigger#event:reloadTriggered</a></li>
-    </ul>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
+        <th>Type</th>
 
         
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
             
-<dt>
-    <h4 class="name" id="initTrigger"><span class="type-signature">(abstract) </span>initTrigger<span class="signature">()</span><span class="type-signature"></span></h4>
+                <td class="name"><code>requestParams</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="SMC.layers.IsochroneLayer.html#requestParams">SMC.layers.IsochroneLayer~requestParams</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default wfs request parameters</td>
+        </tr>
 
     
-</dt>
-<dd>
+
+        <tr>
+            
+                <td class="name"><code>serverURL=null</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The wfs server url path parameter</td>
+        </tr>
 
     
-    <div class="description">
-        Initializes the trigger so it will monitor for the need of a reload.
-    </div>
-    
+    </tbody>
+</table></dl>
 
-    
-
-    
-
-    
-
-    
-<dl class="details">
     
 
     
@@ -268,7 +269,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ReloadTrigger.js.html">layers/reloaders/ReloadTrigger.js</a>, <a href="ReloadTrigger.js.html#line29">line 29</a>
+        <a href="IsochroneLayer.js.html">layers/IsochroneLayer.js</a>, <a href="IsochroneLayer.js.html#line17">line 17</a>
     </li></ul></dd>
     
 
@@ -283,49 +284,317 @@
     
 
     
-
-    
-
-    
-
-    
-
-    
-
-    
 </dd>
 
-        </dl>
+            
+                
+<dt>
+    <h4 class="name" id="requestParams">requestParams</h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        Default wfs request parameters
+    </div>
     
 
     
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
+<span class="param-type">Object</span>
+
+
+            </li>
+        </ul>
+    
 
     
-        <h3 class="subsection-title">Events</h3>
+<dl class="details">
+    
+
+        <h5 class="subsection-title">Properties:</h5>
 
         <dl>
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
             
-<dt>
-    <h4 class="name" id="event:reloadTriggered">reloadTriggered</h4>
+                <td class="name"><code>batch="true"</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Goal direction is turned off</td>
+        </tr>
 
     
-</dt>
-<dd>
+
+        <tr>
+            
+                <td class="name"><code>walTime=null</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default travel time</td>
+        </tr>
 
     
-    <div class="description">
-        Layer reload event. SMC.layers.reloaders.LayerReloader will listen for this event and then reload the layer.
-    </div>
-    
+
+        <tr>
+            
+                <td class="name"><code>styles="color30"</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default styles</td>
+        </tr>
 
     
 
-    
+        <tr>
+            
+                <td class="name"><code>mode="WALK"</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default travel mode</td>
+        </tr>
 
     
 
+        <tr>
+            
+                <td class="name"><code>maxWalkDistance=null</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default maximun travel distance</td>
+        </tr>
+
     
-<dl class="details">
+
+        <tr>
+            
+                <td class="name"><code>time=null</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default time</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>arriveBy="false"</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">By default trip should depart at the specified date and time</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>walkSpeed=null</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default walk speed</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>bikeSpedd=null</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default bike speed</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>output="SHED"</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default output geometry</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>outputFormat="text/javascript"</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Default wfs output format parameter</td>
+        </tr>
+
+    
+    </tbody>
+</table></dl>
+
     
 
     
@@ -347,7 +616,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ReloadTrigger.js.html">layers/reloaders/ReloadTrigger.js</a>, <a href="ReloadTrigger.js.html#line40">line 40</a>
+        <a href="IsochroneLayer.js.html">layers/IsochroneLayer.js</a>, <a href="IsochroneLayer.js.html#line24">line 24</a>
     </li></ul></dd>
     
 
@@ -362,19 +631,11 @@
     
 
     
-
-    
-
-    
-
-    
-
-    
-
-    
 </dd>
 
-        </dl>
+            </dl>
+    
+
     
 </article>
 
