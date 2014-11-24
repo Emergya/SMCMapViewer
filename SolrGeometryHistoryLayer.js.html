@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: layers/history/DataHistoryLayer.js</title>
+    <title>JSDoc: Source: layers/geometry/SolrGeometryHistoryLayer.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: layers/history/DataHistoryLayer.js</h1>
+    <h1 class="page-title">Source: layers/geometry/SolrGeometryHistoryLayer.js</h1>
 
     
 
@@ -25,46 +25,60 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>require("./AggregatingHistoryLayer.js");
-require("../layers.js");
-require("../../LayerLoader.js");
+            <pre class="prettyprint source linenums"><code>require("./GeometryLayer.js");
+require("../../providers/SolrHistoryProvider.js");
+
 
 /**
- * Class formed by the aggregation of several history layers.
+ * Base class for layers using a Solr provider to get the features
  *
  * @class
- * @extends SMC.layers.SingleLayer
+ * @abstract
+ * @extends SMC.layers.geometry.GeometryLayer
+ * @mixes SMC.providers.SolrHistoryProvider
  *
- * @author Luis Román (lroman@emergya.com)
  */
-SMC.layers.history.DataHistoryLayer = SMC.layers.SingleLayer.extend(
-	/** @lends SMC.layers.history.DataHistoryLayer# */
-	{
-		_historyLayers: {},
-		_timer: null,
-		_node: null,
+SMC.layers.geometry.SolrGeometryHistoryLayer = SMC.layers.geometry.GeometryLayer.extend(
+    /** @lends SMC.layers.geometry.SolrGeometryHistoryLayer# */
+    {
+        _historyLayers: {},
+        _timer: null,
+        _node: null,
+        
 
-		 /**
+        /**
          * Initialize the object with the params
          * @param {object} options - object with need parameters
          */
-		initialize: function(options) {
-			L.Util.setOptions(this, options);
-			L.LayerGroup.prototype.initialize.call(this, options);
-			//SMC.layers.SingleLayer.prototype.initialize.apply(this, options);
+        initialize: function(options) {
+           
+            SMC.layers.geometry.GeometryLayer.prototype.initialize.call(this, options);
+            SMC.providers.SolrHistoryProvider.prototype.initialize.call(this, options);
+            L.Util.setOptions(this, options);
+            this.setZIndex(1000);
+
+             
+        },
 
 
-		},
 
-		/**
-         * Method to create an HTML node for the name of the layer.
+        /**
+         * Method to load the features
+         */
+        load: function() {
+           
+
+        },
+      
+        /**
+         * Method to create an HTML node for the layer.
          * @returns {String} HTML code representing the code to be added to the layer's entry in the layer tree.
          */
-		createNodeHTML: function() {
-			this._historyLayers = this._orderLayers();
-			var layers = this._historyLayers;
+        createNodeHTML: function(){
 
-			 var node = document.createElement("div");
+            var node = document.createElement("div");
+            node.id = "node_" + this._leaflet_id;
+            
             var label = document.createElement('span'),
                 input,
                 checked = this.getMap().hasLayer(this);
@@ -78,24 +92,26 @@ SMC.layers.history.DataHistoryLayer = SMC.layers.SingleLayer.extend(
 
             label.appendChild(input);
             label.appendChild(name);
-
+            node.appendChild(label);
+            if($.isEmptyObject(this._featuresForLayer)){
+              return node;
+             }
 
             var sliderControl = document.createElement("table");
             sliderControl.style.marginLeft = '10px';
             sliderControl.style.marginTop = '5px';
             sliderControl.className = 'leaflet-bar leaflet-update-interval ';
-            sliderControl.style.font = '12px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif';
 
             var sliderControlLabel = document.createElement("span");
             sliderControlLabel.style.float = 'left';
-            
+            sliderControl.style.font = '12px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif';
 
             var inputInterval = document.createElement('input');
             inputInterval.type = 'range';
             inputInterval.id = "interval_" + this._leaflet_id;
             inputInterval.name = "interval_" + this._leaflet_id;
             inputInterval.min = 0;
-            inputInterval.max = Object.keys(layers).length - 1;
+            inputInterval.max = Object.keys(this._featuresForLayer).length - 1;
             inputInterval.step = 1;
             inputInterval.value = 0;
             //sliderControl.innerHTML += '&lt;input id="interval_' + this._leaflet_id + '" name="interval_' + this._leaflet_id + '" min="0" max="' + (Object.keys(this._featuresForLayer).length - 1) + '" type="range" step="1" value="0"/>';
@@ -134,7 +150,7 @@ SMC.layers.history.DataHistoryLayer = SMC.layers.SingleLayer.extend(
 
             sliderControl.appendChild(tr);
            
-            node.appendChild(label);
+            
             node.appendChild(sliderControl);
 
             play_pause.onclick = function() {
@@ -145,163 +161,129 @@ SMC.layers.history.DataHistoryLayer = SMC.layers.SingleLayer.extend(
             };
             this._node = node;
             return node;
-		},
 
-		_orderLayers: function() {
-			var layers;
-			var exists = true;
-			for (var d in this._aggregatingLayers) {
-				var date = this._aggregatingLayers[d].options.date;
-				if (!date) {
-					exists = false;
-					break;
-				}
-			}
-
-			if (!exists) {
-				layers = this._aggregatingLayers;
-
-			} else {
-
-				var layersObj = {};
-				var layersArray = [];
-				for (var l in this._aggregatingLayers) {
-					layersArray.push(this._aggregatingLayers[l]);
-				}
-
-				layersArray.sort(function(a, b) {
-					return (a.options.date - b.options.date)
-				});
-
-				for (var i = 0; i &lt; layersArray.length; i++) {
-					if (!layersObj[layersArray[i].options.date]) {
-						layersObj[layersArray[i].options.date] = layersArray[i];
-					} else {
-						layersObj[layersArray[i].options.label] = layersArray[i];
-					}
-				}
-				layers = layersObj;
-			}
-			return layers;
-
-		},
-
-
-		 /**
-         * Method to load the control in the map
-         * @param {SMC.Map} map - Map to be added
-         */
-		addTo: function(map) {
-			SMC.layers.aggregation.AggregatingLayer.prototype.addTo.call(this, map);
-		},
-
-		/**
+        },
+     
+        /**
          * Method to get the map
          * @returns {SMC.Map} map - Map layer
          */
-		getMap: function() {
-			SMC.layers.aggregation.AggregatingLayer.prototype.getMap.call(this, arguments);
-			return map;
-		},
+        getMap: function() {
+           if (this.parent) {
+                if (this.parent.map) {
+                    map = this.parent.map;
+                } else if (this.parent._map) {
+                    map = this.parent._map;
+                }
+                 else if (this.parent.parent) {
+                    if (this.parent.parent.map)
+                        map = this.parent.parent.map;
+                    else if (this.parent.parent._map)
+                        map = this.parent.parent._map;
+                }
 
-		/**
-         * Method to show the correct history layer
-         * @param {string} time - Value of the slider control
+                return map;
+            }
+            else if(this._map){
+                map = this._map;
+                return map;
+            }
+
+        },
+
+       
+         /**
+         * Method to change the set of features for the layer
          */
-		showTimeData: function(time) {
-			var i = 0;
-			var data = this._historyLayers;
-			if (time % 1 !== 0) {
-				time = time - (time % 1);
-			}
-			for (var d in data) {
-				// if (i == time &amp;&amp; data[d].actual) {
-				// 	break;
-				// }
-				data[d]._slidermove = true;
-				if (data[d].actual) {
-						data[d].onRemove(this.getMap());
-						data[d].actual = false;
+        showTimeData: function(time) {
+            var i = 0;
+            var data = this._featuresForLayer;
+            if (time % 1 !== 0) {
+                time = time - (time % 1);
+            }
 
-				}
+            for (var d in data) {
+                if (data[d].actual) { 
+                    data[d].actual = false;
+                }
+                if (i == time) {
+                    if (!data[d].actual) {
+                        
+                        data[d].actual = true;
+                        this.features = [];
+                        if(data[d].lastZoom &amp;&amp; (data[d].lastZoom != this.getMap().getZoom())){
+                            for(var f in data[d]){
+                                data[d][f]._clean = false;
+                            }
+                        }
+                        this.addGeometryFromFeatures(data[d]);
+                        data[d].lastZoom = this.getMap().getZoom();
+                        //recalculate canvas position for geometry layers (important)
+                        this.getMap().fire("slidermove");
+                    }
 
-				if (i == time) {
-					if (!data[d].actual) {
-						
-						data[d].actual = true;
-						if(data[d].lastZoom &amp;&amp; (data[d].lastZoom != this.getMap().getZoom())){
-							 for(var f in data[d].features){
-	                            data[d].features[f]._clean = false;
-	                        }
-	                    }
-						data[d].onAdd(this.getMap());
-						data[d].lastZoom = this.getMap().getZoom();
-						//recalculate canvas position for geometry layers (important)
-						this.getMap().fire("slidermove");
-					}
-				}
+                }
 
-				i++;
+                i++;
 
-			}
-			
+            }
 
-		},
+        },
 
-		_addTimeData: function(time) {
-			var i = 0;
-			var data = this._historyLayers;
-			for (var d in data) {
+        _addTimeData: function(time) {
+         var i = 0;
+            var data = this._featuresForLayer;
+            for (var d in data) {
+                if (i == time) {
+                    this.addGeometryFromFeatures(data[d]);
+                    data[d].actual = true;
+                }
+               
+                i++;
 
-				if (i == time) {
-					this.getMap().addLayer(data[d]);
-					this._historyLayers[d].actual = true;
-				}
-				i++;
+            }
 
-			}
+        },
 
-		},
+        _showLabel: function(sliderControlLabel) {
+          var data = this._featuresForLayer;
+            for (var d in data) {
+                if (data[d].actual) {
+                    sliderControlLabel.innerHTML = d;
+                }
+            }
+        },
 
-		_showLabel: function(sliderControlLabel) {
-			var data = this._historyLayers;
-			for (var d in data) {
-				if (data[d].actual) {
-					sliderControlLabel.innerHTML = data[d].options.label || data[d].options.typeName;
-				}
-			}
-		},
+        _clickOnLayer: function(node) {
+           var pause = node.getElementsByClassName('fa fa-pause')[0];
+            if (pause) {
+                this._onPlayPause(node);
+            }
+            var data = this._featuresForLayer;
+            if (node.children[1].style.display != 'none') {
+                node.children[1].style.display = 'none';
+                node.children[0].checked = false;
+                for (var d in data) {
+                    if (data[d].actual) { 
+                        this.onRemove(this.getMap());
+                    }
+                }
+            } else {
+                node.children[1].style.display = 'block';
+                node.children[0].checked = true;
+                for (var d in data) {
+                    if (data[d].actual) {
+                        this.onAdd(this.getMap());
+                        this.addGeometryFromFeatures(data[d]);
 
-		_clickOnLayer: function(node) {
-			var pause = node.getElementsByClassName('fa fa-pause')[0];
-			if (pause) {
-				this._onPlayPause(node);
-			}
-			var data = this._historyLayers;
-			if (node.children[1].style.display != 'none') {
-				node.children[1].style.display = 'none';
-				node.children[0].checked = false;
-				for (var d in data) {
-					if (data[d].actual) {
-						data[d].onRemove(this.getMap());
-					}
-				}
-			} else {
-				node.children[1].style.display = 'block';
-				node.children[0].checked = true;
-				for (var d in data) {
-					if (data[d].actual) {
-						data[d].onAdd(this.getMap());
+                    }
+                }
+            }
 
-					}
-				}
-			}
+        },
 
-		},
-
-		_onPlayPause: function(node, time) {
-			var data = this._historyLayers;
-
+        _onPlayPause: function(node, time) {
+           var data = this._featuresForLayer;
            var slider = node.children[1].children[0].children[2].children[0];
            var maxValue = slider.max;
            var sliderControlLabel = node.children[1].children[0].children[0].children[0];
@@ -338,53 +320,20 @@ SMC.layers.history.DataHistoryLayer = SMC.layers.SingleLayer.extend(
                 play.className = 'fa fa-play';
                 clearInterval(this._timer);
             }
-		},
-
-		 /**
-         * Method to remove the control in the map
-         * @param {SMC.Map} map - Map to be removed
-         */
-		onRemove: function(map) {
-			var data = this._historyLayers;
-			for (var d in data) {
-				if (data[d].actual) {
-					data[d]._slidermove = false;
-					data[d].onRemove(map);
-
-				}
-
-			}
-
-		},
-
- 		/**
-         * Method to load the control in the map
-         * @param {SMC.Map} map - Map to be added
-         */
-		onAdd: function(map) {
-			SMC.layers.aggregation.AggregatingLayer.prototype.addTo.call(this, map);
-			var value;
-			if (this._node != null) {
-				value = this._node.children[1].children[0].value;
-			} else
-				value = 0;
-
-			var data = this._historyLayers;
-			for (var d in data) {
-				if (data[d].actual) {
-					data[d]._slidermove = false;
-					data[d].onAdd(map);
-
-				}
-			}
-
-		
-
-		}
+        },
 
 
+       
+        
+    }, [SMC.providers.SolrHistoryProvider]);
 
-	});</code></pre>
+/**
+ * API factory method for easy creation of Solr geometry history layer.
+ * @params {Object} options - Options to initialize the Solr request 
+ */
+SMC.solrGeometryHistoryLayer = function(options) {
+    return new SMC.layers.geometry.SolrGeometryHistoryLayer(options);
+};</code></pre>
         </article>
     </section>
 
