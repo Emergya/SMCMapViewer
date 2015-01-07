@@ -20,7 +20,6 @@ SMC.layers.geometry.SolrGeometryHistoryLayer = SMC.layers.geometry.GeometryLayer
 
         currentTime: 0,
 
-
         /**
          * Initialize the object with the params
          * @param {object} options - object with need parameters

@@ -33,7 +33,7 @@ SMC.layers.geometry.CanvasRenderer = L.Class.extend(
         options: {
             draggingUpdates: true,
             mouseOver: false,
-            debug: false
+			debug: false
         },
 
         /**
