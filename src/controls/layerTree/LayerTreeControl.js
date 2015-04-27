@@ -249,6 +249,11 @@ SMC.controls.layerTree.LayerTreeControl = L.Control.extend(
         },
 
         _onLayerChange: function(e) {
+            if (e.layer instanceof L.Marker) {
+                // We don't want to trigger tree rebuilding when adding each marker of a layer.
+                return;
+            }
+
             if (e.layer._slidermove) {
                 return;
             }
@@ -259,7 +264,7 @@ SMC.controls.layerTree.LayerTreeControl = L.Control.extend(
 
 
             var obj = this._layers[L.Util.stamp(e.layer)];
-            if(e.layer.deleteTree){
+            if (e.layer.deleteTree) {
                 delete this._layers[L.Util.stamp(e.layer)];
                 this._update();
                 return;
