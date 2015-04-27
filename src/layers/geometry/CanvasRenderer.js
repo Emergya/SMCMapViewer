@@ -33,8 +33,10 @@ SMC.layers.geometry.CanvasRenderer = L.Class.extend(
         options: {
             draggingUpdates: true,
             mouseOver: false,
-			debug: false
+            debug: false
         },
+
+        _visible: false,
 
         /**
          * Initialize the object with the params
@@ -110,6 +112,10 @@ SMC.layers.geometry.CanvasRenderer = L.Class.extend(
          * @returns {SMC.layers.Layer} layer to show on the map
          */
         renderCanvas: function(ctx, features, map) {
+
+            if (!this._visible) {
+                return;
+            }
 
             this._initCtx(ctx, map);
             var zBuffer = [];
@@ -658,6 +664,7 @@ SMC.layers.geometry.CanvasRenderer = L.Class.extend(
             map.on("moveend", this._onMapMoveEnded, this);
             map.on("click", this._onMapClicked, this);
 
+            this._visible = true;
         },
 
         /**
@@ -679,6 +686,8 @@ SMC.layers.geometry.CanvasRenderer = L.Class.extend(
                     map.off(eventName, eventHandlers[i], this);
                 }
             }
+
+            this._visible = false;
         }
 
     }, [SMC.layers.stylers.MapCssStyler]);

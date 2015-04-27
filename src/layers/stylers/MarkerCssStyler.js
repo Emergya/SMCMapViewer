@@ -156,8 +156,7 @@ SMC.layers.stylers.MarkerCssStyler = SMC.layers.stylers.Styler.extend(
                             value: anchorLeft,
                             units: "px"
                         }
-                    }),
-
+                    })
                 });
             } else {
                 icon = new L.icon({
